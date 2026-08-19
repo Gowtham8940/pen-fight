@@ -10,10 +10,23 @@
     "test": "jest"
   },
   "dependencies": {
-    "react": "19.2.3",
-    "react-native": "0.86.0",
     "@react-native/new-app-screen": "0.86.0",
-    "react-native-safe-area-context": "^5.5.2"
+    "@react-navigation/native": "^7.3.16",
+    "@react-navigation/native-stack": "^7.18.8",
+    "@shopify/react-native-skia": "^2.11.0",
+    "i18next": "^26.3.6",
+    "react": "19.2.3",
+    "react-i18next": "^17.0.11",
+    "react-native": "0.86.0",
+    "react-native-gesture-handler": "^3.2.1",
+    "react-native-mmkv": "^4.3.2",
+    "react-native-nitro-modules": "^0.36.5",
+    "react-native-reanimated": "^4.5.3",
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-screens": "^4.27.0",
+    "react-native-sound": "^0.13.0",
+    "react-native-worklets": "^0.11.4",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

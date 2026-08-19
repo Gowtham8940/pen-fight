@@ -1,0 +1,41 @@
+{
+  "app": { "name": "Pen Fight", "tagline": "The unofficial sport of the last bench" },
+  "home": {
+    "play": "Play",
+    "playLocal": "Pass & Play",
+    "skins": "Pens",
+    "settings": "Settings"
+  },
+  "game": {
+    "turn": "{{name}}'s turn",
+    "playerA": "Player 1",
+    "playerB": "Player 2",
+    "aimHint": "Drag your pen back, then release to flick",
+    "wins": "{{name}} wins!",
+    "rematch": "Rematch",
+    "home": "Home",
+    "score": "Score"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "sound": "Sound",
+    "muted": "Muted",
+    "language": "Language"
+  },
+  "skins": {
+    "title": "Choose your pen",
+    "player1": "Player 1 pen",
+    "player2": "Player 2 pen",
+    "locked": "Locked"
+  },
+  "skinNames": {
+    "classic": "Classic Blue",
+    "ruby": "Ruby Red",
+    "graphite": "Graphite",
+    "gold": "Golden Ink"
+  }
+}
