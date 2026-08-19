@@ -1,60 +1,83 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useTheme } from './theme/useTheme';
 import { radii, spacing } from './theme/tokens';
 import { scale } from '../lib/responsive';
 import { Text } from './Text';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 /**
- * Themed button.
- * Props: title, onPress, variant ('primary'|'secondary'|'ghost'), disabled, style, leading.
+ * School-theme button, modelled on penfight.xyz:
+ * - primary : solid red block, white stamped label
+ * - outline : blue-ink outlined block, ink label
+ * - link    : underlined ink text link
+ * Springs down slightly when pressed.
  */
 export function Button({ title, onPress, variant = 'primary', disabled, style, leading }) {
   const theme = useTheme();
+  const pressed = useSharedValue(0);
 
-  const bg = {
-    primary: theme.colors.brand,
-    secondary: theme.colors.surfaceAlt,
-    ghost: 'transparent',
-  }[variant];
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(pressed.value ? 0.96 : 1, { damping: 16, stiffness: 260 }) }],
+  }));
 
-  const fg = {
-    primary: '#FFFFFF',
-    secondary: theme.colors.text,
-    ghost: theme.colors.brand,
-  }[variant];
+  const isLink = variant === 'link';
+  const bg = variant === 'primary' ? theme.colors.red : 'transparent';
+  const fg = variant === 'primary' ? '#FFF7EC' : theme.colors.ink;
+  const borderColor = variant === 'outline' ? theme.colors.ink : 'transparent';
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.base,
+      onPressIn={() => (pressed.value = 1)}
+      onPressOut={() => (pressed.value = 0)}
+      style={[
+        isLink ? styles.link : styles.block,
         {
           backgroundColor: bg,
-          borderColor: variant === 'ghost' ? theme.colors.brand : 'transparent',
-          borderWidth: variant === 'ghost' ? StyleSheet.hairlineWidth * 2 : 0,
-          opacity: disabled ? 0.45 : pressed ? 0.85 : 1,
-          paddingVertical: scale(14),
-          paddingHorizontal: scale(22),
+          borderColor,
+          borderWidth: variant === 'outline' ? 2 : 0,
+          opacity: disabled ? 0.45 : 1,
         },
+        variant === 'primary' && styles.primaryShadow,
+        animatedStyle,
         style,
       ]}>
       <View style={styles.row}>
         {leading}
-        <Text weight="bold" color={fg} variant="subheading">
-          {title}
-        </Text>
+        {isLink ? (
+          <Text family="hand" variant="body" color={theme.colors.ink} style={styles.underline}>
+            {title}
+          </Text>
+        ) : (
+          <Text family="display" variant="subheading" color={fg}>
+            {title}
+          </Text>
+        )}
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: radii.pill,
+  block: {
+    borderRadius: radii.sm,
+    paddingVertical: scale(14),
+    paddingHorizontal: scale(22),
     alignItems: 'center',
     justifyContent: 'center',
   },
+  primaryShadow: {
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  link: { paddingVertical: spacing.sm, alignItems: 'center' },
+  underline: { textDecorationLine: 'underline' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

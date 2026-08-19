@@ -48,9 +48,10 @@ function SkinCard({ skin, selected, owned, onPress }) {
 }
 
 function PlayerSection({ title, selectedId, onSelect, ownedSkins }) {
+  const theme = useTheme();
   return (
     <View style={styles.section}>
-      <Text variant="subheading" weight="bold">
+      <Text variant="subheading" color={theme.colors.chalk}>
         {title}
       </Text>
       <View style={styles.grid}>
@@ -80,7 +81,7 @@ export function SkinSelectScreen() {
     <ScrollView
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={styles.content}>
-      <Text variant="heading" weight="bold">
+      <Text variant="heading" color={theme.colors.chalk}>
         {t('skins.title')}
       </Text>
       <PlayerSection

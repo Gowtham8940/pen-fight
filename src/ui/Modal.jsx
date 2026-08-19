@@ -8,7 +8,7 @@ import { scale } from '../lib/responsive';
  * Centered themed modal card.
  * Props: visible, onRequestClose, dismissable (tap backdrop to close), children.
  */
-export function Modal({ visible, onRequestClose, dismissable = false, children }) {
+export function Modal({ visible, onRequestClose, dismissable = false, bare = false, children }) {
   const theme = useTheme();
   return (
     <RNModal
@@ -20,13 +20,17 @@ export function Modal({ visible, onRequestClose, dismissable = false, children }
       <Pressable
         style={styles.backdrop}
         onPress={dismissable ? onRequestClose : undefined}>
-        <Pressable
-          style={[
-            styles.card,
-            { backgroundColor: theme.colors.surface, maxWidth: scale(360) },
-          ]}>
-          {children}
-        </Pressable>
+        {bare ? (
+          <View style={{ width: '100%', maxWidth: scale(360) }}>{children}</View>
+        ) : (
+          <Pressable
+            style={[
+              styles.card,
+              { backgroundColor: theme.colors.surface, maxWidth: scale(360) },
+            ]}>
+            {children}
+          </Pressable>
+        )}
       </Pressable>
     </RNModal>
   );

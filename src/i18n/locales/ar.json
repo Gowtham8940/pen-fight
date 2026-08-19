@@ -4,7 +4,14 @@
     "play": "العب",
     "playLocal": "لعب بالتناوب",
     "skins": "الأقلام",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "classDiary": "دفتر الصف",
+    "diaryNo": "رقم ١",
+    "name": "الاسم",
+    "player": "المقعد الأخير",
+    "statStreak": "السلسلة",
+    "statBest": "الأفضل",
+    "statGames": "المباريات"
   },
   "game": {
     "turn": "دور {{name}}",

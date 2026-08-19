@@ -28,14 +28,14 @@ export function StreakScreen() {
       {/* Big flame count */}
       <View style={styles.hero}>
         <Text style={styles.bigFlame}>🔥</Text>
-        <Text variant="title" weight="bold">
+        <Text variant="title" color={theme.colors.chalk}>
           {streak}
         </Text>
-        <Text variant="body" color={theme.colors.textMuted}>
+        <Text variant="body" color={theme.colors.chalkSoft}>
           {streak === 1 ? t('streak.day') : t('streak.days')}
         </Text>
         {streak === 0 && (
-          <Text variant="caption" color={theme.colors.textMuted} style={styles.center}>
+          <Text variant="caption" color={theme.colors.chalkSoft} style={styles.center}>
             {t('streak.none')}
           </Text>
         )}
@@ -76,7 +76,7 @@ export function StreakScreen() {
         <Stat label={t('streak.current')} value={streak} />
         <Stat label={t('streak.best')} value={bestStreak} />
       </View>
-      <Text variant="caption" color={theme.colors.textMuted} style={styles.center}>
+      <Text variant="caption" color={theme.colors.chalkSoft} style={styles.center}>
         {t('streak.totalGames', { count: totalGames })}
       </Text>
     </ScrollView>

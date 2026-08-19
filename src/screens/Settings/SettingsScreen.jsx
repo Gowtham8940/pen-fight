@@ -70,7 +70,7 @@ export function SettingsScreen() {
     <ScrollView
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={styles.content}>
-      <Text variant="heading" weight="bold">
+      <Text variant="heading" color={theme.colors.chalk}>
         {t('settings.title')}
       </Text>
 

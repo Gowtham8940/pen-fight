@@ -4,7 +4,14 @@
     "play": "Play",
     "playLocal": "Pass & Play",
     "skins": "Pens",
-    "settings": "Settings"
+    "settings": "Settings",
+    "classDiary": "Class Diary",
+    "diaryNo": "no. 1",
+    "name": "Name",
+    "player": "Last Bench",
+    "statStreak": "Streak",
+    "statBest": "Best",
+    "statGames": "Games"
   },
   "game": {
     "turn": "{{name}}'s turn",

@@ -8,6 +8,8 @@ import { useTheme } from '../../ui/theme/useTheme';
 import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
+import { PaperCard } from '../../ui/PaperCard';
+import { Chalkboard, ChalkText } from '../../ui/Chalkboard';
 import { spacing, radii } from '../../ui/theme/tokens';
 import { scale } from '../../lib/responsive';
 
@@ -122,93 +124,114 @@ export function GameScreen({ navigation }) {
         onGameOver={onGameOver}
       />
 
-      {/* HUD */}
+      {/* Chalkboard scoreboard (the class name-list) */}
       <View style={[styles.hud, { top: insets.top + spacing.sm, left: spacing.md, right: spacing.md }]}>
-        <ScorePill color={skinB.body} label={t('game.playerB')} value={scores.b} />
-        <View style={styles.turnWrap} pointerEvents="none">
-          {status !== GAME_STATUS.GAMEOVER && (
-            <View style={[styles.turnChip, { backgroundColor: currentSkin.body }]}>
-              <Text variant="caption" weight="bold" color="#FFFFFF">
-                {t('game.turn', { name: turnName })}
-              </Text>
-            </View>
-          )}
-        </View>
-        <ScorePill color={skinA.body} label={t('game.playerA')} value={scores.a} />
+        <Chalkboard>
+          <ScoreLine
+            name={t('game.playerA')}
+            score={scores.a}
+            color={skinA.body}
+            active={status !== GAME_STATUS.GAMEOVER && current === 'a'}
+          />
+          <View style={styles.chalkRule} />
+          <ScoreLine
+            name={t('game.playerB')}
+            score={scores.b}
+            color={skinB.body}
+            active={status !== GAME_STATUS.GAMEOVER && current === 'b'}
+          />
+        </Chalkboard>
       </View>
 
-      {/* Aim hint on the very first turn */}
-      {status === GAME_STATUS.AIMING && scores.a === 0 && scores.b === 0 && (
+      {/* Turn / aim hint */}
+      {status === GAME_STATUS.AIMING && (
         <View style={[styles.hint, { bottom: insets.bottom + spacing.md }]} pointerEvents="none">
-          <Text variant="caption" color={theme.colors.textMuted} style={{ textAlign: 'center' }}>
-            {t('game.aimHint')}
+          <Text family="hand" variant="body" color={theme.colors.chalkSoft} style={styles.centerText}>
+            {scores.a === 0 && scores.b === 0
+              ? t('game.aimHint')
+              : t('game.turn', { name: turnName })}
           </Text>
         </View>
       )}
 
-      {/* Win modal */}
-      <Modal visible={status === GAME_STATUS.GAMEOVER}>
-        <Text variant="heading" weight="bold" style={{ textAlign: 'center' }}>
-          {t('game.wins', {
-            name: t(winner === 'a' ? 'game.playerA' : 'game.playerB'),
-          })}
-        </Text>
-        <Text variant="body" color={theme.colors.textMuted}>
-          {scores.a} — {scores.b}
-        </Text>
-        {streak > 0 && (
-          <Text variant="body" weight="bold" color={theme.colors.accent} style={{ textAlign: 'center' }}>
-            🔥 {t('streak.celebrate', { count: streak })}
+      {/* Win note (torn paper) */}
+      <Modal visible={status === GAME_STATUS.GAMEOVER} bare>
+        <PaperCard>
+          <View style={styles.noteHead}>
+            <Text family="display" variant="subheading" color={theme.colors.ink}>
+              Pen Fight
+            </Text>
+            <Text family="hand" variant="caption" color={theme.colors.inkMuted}>
+              {scores.a} — {scores.b}
+            </Text>
+          </View>
+          <View style={[styles.rule, { backgroundColor: theme.colors.ink }]} />
+          <Text family="display" variant="heading" color={theme.colors.red} style={styles.centerText}>
+            {t('game.wins', { name: t(winner === 'a' ? 'game.playerA' : 'game.playerB') })}
           </Text>
-        )}
-        <View style={styles.modalActions}>
-          <Button title={t('game.rematch')} onPress={onRematch} />
-          <Button title={t('game.home')} variant="secondary" onPress={onHome} />
-        </View>
+          {streak > 0 && (
+            <Text family="hand" variant="body" color={theme.colors.inkSoft} style={styles.centerText}>
+              🔥 {t('streak.celebrate', { count: streak })}
+            </Text>
+          )}
+          <View style={styles.noteActions}>
+            <Button title={t('game.rematch')} onPress={onRematch} />
+            <Button title={t('game.home')} variant="link" onPress={onHome} />
+          </View>
+        </PaperCard>
       </Modal>
     </View>
   );
 }
 
-function ScorePill({ color, label, value }) {
+/** One chalk name-list line: name, tally boxes, score. */
+function ScoreLine({ name, score, color, active }) {
   const theme = useTheme();
+  const boxes = 5;
   return (
-    <View style={[styles.scorePill, { backgroundColor: theme.colors.surface }]}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text variant="caption" color={theme.colors.textMuted}>
-        {label}
-      </Text>
-      <Text variant="subheading" weight="bold">
-        {value}
-      </Text>
+    <View style={styles.scoreLine}>
+      <View style={styles.nameCell}>
+        <ChalkText size="sm" color={active ? theme.colors.chalk : theme.colors.chalkSoft}>
+          {active ? '› ' : '  '}
+          {name}
+        </ChalkText>
+      </View>
+      <View style={styles.tally}>
+        {Array.from({ length: boxes }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.tallyBox,
+              { borderColor: theme.colors.chalkSoft },
+              i < score && { backgroundColor: color, borderColor: color },
+            ]}
+          />
+        ))}
+      </View>
+      <ChalkText size="lg" style={styles.scoreNum}>
+        {score}
+      </ChalkText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  hud: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  hud: { position: 'absolute' },
+  chalkRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: spacing.xs },
+  scoreLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  nameCell: { flex: 1 },
+  tally: { flexDirection: 'row', gap: 4 },
+  tallyBox: {
+    width: scale(14),
+    height: scale(14),
+    borderWidth: 1.5,
+    borderRadius: 2,
   },
-  turnWrap: { flex: 1, alignItems: 'center' },
-  turnChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-  },
-  scorePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    minWidth: scale(70),
-  },
-  dot: { width: scale(10), height: scale(10), borderRadius: 999 },
+  scoreNum: { minWidth: scale(26), textAlign: 'right' },
   hint: { position: 'absolute', left: spacing.xl, right: spacing.xl },
-  modalActions: { alignSelf: 'stretch', gap: spacing.sm, marginTop: spacing.sm },
+  centerText: { textAlign: 'center' },
+  noteHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  rule: { height: 2, marginTop: spacing.xs, marginBottom: spacing.md, opacity: 0.8 },
+  noteActions: { alignSelf: 'stretch', gap: spacing.xs, marginTop: spacing.md },
 });

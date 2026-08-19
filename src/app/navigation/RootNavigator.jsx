@@ -24,7 +24,7 @@ export function RootNavigator() {
       <Stack.Screen
         name={Routes.Game}
         component={GameScreen}
-        options={{ headerShown: false, orientation: 'landscape' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen name={Routes.Settings} component={SettingsScreen} options={{ title: '' }} />
       <Stack.Screen name={Routes.SkinSelect} component={SkinSelectScreen} options={{ title: '' }} />
