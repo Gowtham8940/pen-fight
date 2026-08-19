@@ -16,6 +16,7 @@ export const StorageKeys = {
   skinA: 'skins.playerA',
   skinB: 'skins.playerB',
   ownedSkins: 'skins.owned', // JSON array — hook for later donations/shop unlocks
+  streak: 'streak.data', // JSON blob for the daily-streak feature
 };
 
 export function getString(key, fallback) {

@@ -26,6 +26,19 @@
     "muted": "كتم",
     "language": "اللغة"
   },
+  "streak": {
+    "title": "سلسلتك",
+    "current": "الحالية",
+    "best": "الأفضل",
+    "days": "أيام",
+    "day": "يوم",
+    "thisWeek": "هذا الأسبوع",
+    "none": "العب مباراة اليوم لبدء سلسلة!",
+    "celebrate": "سلسلة {{count}} يوم!",
+    "keepItUp": "واصل — العب مجددًا غدًا 🔥",
+    "totalGames_one": "لُعبت مباراة واحدة",
+    "totalGames_other": "{{count}} مباراة لُعبت"
+  },
   "skins": {
     "title": "اختر قلمك",
     "player1": "قلم اللاعب ١",

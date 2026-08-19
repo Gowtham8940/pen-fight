@@ -5,6 +5,7 @@ import { HomeScreen } from '../../screens/Home/HomeScreen';
 import { GameScreen } from '../../screens/Game/GameScreen';
 import { SettingsScreen } from '../../screens/Settings/SettingsScreen';
 import { SkinSelectScreen } from '../../screens/SkinSelect/SkinSelectScreen';
+import { StreakScreen } from '../../features/streaks/StreakScreen';
 import { useTheme } from '../../ui/theme/useTheme';
 
 const Stack = createNativeStackNavigator();
@@ -27,6 +28,7 @@ export function RootNavigator() {
       />
       <Stack.Screen name={Routes.Settings} component={SettingsScreen} options={{ title: '' }} />
       <Stack.Screen name={Routes.SkinSelect} component={SkinSelectScreen} options={{ title: '' }} />
+      <Stack.Screen name={Routes.Streak} component={StreakScreen} options={{ title: '' }} />
     </Stack.Navigator>
   );
 }

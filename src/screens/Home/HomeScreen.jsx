@@ -7,6 +7,7 @@ import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
 import { spacing } from '../../ui/theme/tokens';
 import { Routes } from '../../app/navigation/routes';
+import { StreakBadge } from '../../features/streaks/StreakBadge';
 
 export function HomeScreen({ navigation }) {
   const theme = useTheme();
@@ -14,6 +15,10 @@ export function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.topbar}>
+        <StreakBadge onPress={() => navigation.navigate(Routes.Streak)} />
+      </View>
+
       <View style={styles.hero}>
         <Text variant="title" weight="bold" color={theme.colors.brand} style={styles.center}>
           {t('app.name')}
@@ -42,6 +47,7 @@ export function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, padding: spacing.xl, justifyContent: 'space-between' },
+  topbar: { flexDirection: 'row', justifyContent: 'flex-end' },
   hero: { flex: 1, justifyContent: 'center', gap: spacing.sm },
   center: { textAlign: 'center' },
   actions: { gap: spacing.md, paddingBottom: spacing.xl },

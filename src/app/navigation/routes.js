@@ -3,4 +3,5 @@ export const Routes = {
   Game: 'Game',
   Settings: 'Settings',
   SkinSelect: 'SkinSelect',
+  Streak: 'Streak',
 };

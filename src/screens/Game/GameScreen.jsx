@@ -18,6 +18,7 @@ import { WORLD_STATUS } from '../../game/engine/constants';
 import { useGameStore } from '../../game/state/useGameStore';
 import { getSkin } from '../../skins/registry';
 import { SoundManager } from '../../audio/SoundManager';
+import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
 
 export function GameScreen({ navigation }) {
   const theme = useTheme();
@@ -31,6 +32,7 @@ export function GameScreen({ navigation }) {
   const current = useGameStore(s => s.current);
   const winner = useGameStore(s => s.winner);
   const scores = useGameStore(s => s.scores);
+  const streak = useStreakStore(activeStreak);
 
   const skinA = useMemo(() => getSkin(skinAId), [skinAId]);
   const skinB = useMemo(() => getSkin(skinBId), [skinBId]);
@@ -85,6 +87,7 @@ export function GameScreen({ navigation }) {
 
   const onGameOver = useCallback(win => {
     useGameStore.getState().endGame(win);
+    useStreakStore.getState().recordPlay(); // count this completed match toward the daily streak
     SoundManager.play('penoff');
     setTimeout(() => SoundManager.play('win'), 350);
   }, []);
@@ -153,6 +156,11 @@ export function GameScreen({ navigation }) {
         <Text variant="body" color={theme.colors.textMuted}>
           {scores.a} — {scores.b}
         </Text>
+        {streak > 0 && (
+          <Text variant="body" weight="bold" color={theme.colors.accent} style={{ textAlign: 'center' }}>
+            🔥 {t('streak.celebrate', { count: streak })}
+          </Text>
+        )}
         <View style={styles.modalActions}>
           <Button title={t('game.rematch')} onPress={onRematch} />
           <Button title={t('game.home')} variant="secondary" onPress={onHome} />

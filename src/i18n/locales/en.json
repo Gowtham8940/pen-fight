@@ -26,6 +26,19 @@
     "muted": "Muted",
     "language": "Language"
   },
+  "streak": {
+    "title": "Your Streak",
+    "current": "Current",
+    "best": "Best",
+    "days": "days",
+    "day": "day",
+    "thisWeek": "This week",
+    "none": "Play a game today to start a streak!",
+    "celebrate": "{{count}} day streak!",
+    "keepItUp": "Keep it up — play again tomorrow 🔥",
+    "totalGames_one": "{{count}} game played",
+    "totalGames_other": "{{count}} games played"
+  },
   "skins": {
     "title": "Choose your pen",
     "player1": "Player 1 pen",
