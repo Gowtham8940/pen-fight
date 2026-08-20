@@ -53,9 +53,10 @@
     "locked": "Locked"
   },
   "skinNames": {
-    "classic": "Classic Blue",
-    "ruby": "Ruby Red",
-    "graphite": "Graphite",
+    "classic": "Pilot Blue",
+    "ruby": "Ruby Gel",
+    "reynolds": "Reynolds 045",
+    "marker": "Green Marker",
     "gold": "Golden Ink"
   }
 }

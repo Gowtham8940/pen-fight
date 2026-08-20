@@ -11,9 +11,9 @@ const PAD_X = 16;
 const PAD_BOTTOM = 20;
 const REFERENCE_TABLE_H = 640; // skin geometry is authored at this table height
 
-export function computeTableLayout(width, height, insets) {
+export function computeTableLayout(width, height, insets, hudTop = HUD_TOP) {
   const x = PAD_X;
-  const y = insets.top + HUD_TOP;
+  const y = insets.top + hudTop; // hudTop = measured scoreboard height + gaps
   const w = width - PAD_X * 2;
   const h = height - y - (insets.bottom + PAD_BOTTOM);
 

@@ -26,12 +26,18 @@ export const PHYSICS = {
   SETTLE_FRAMES: 10,
 
   // --- coefficients relative to table height (converted to px in tuning) ---
-  MAX_LAUNCH_SPEED: 2.7, // table-heights / second at full power
-  FRICTION_DECEL: 1.7, // table-heights / second^2 (linear kinetic friction)
-  SETTLE_SPEED: 0.03, // below this speed a body is considered at rest
-  MAX_DRAG: 0.3, // max useful pull distance (table heights)
+  // Tuned so a full-power flick travels ~1 table-height and stops (distance =
+  // V^2 / 2A). Previously 2.7/1.7 gave ~2.1 heights, which sent pens flying
+  // off the far edge; 1.9/1.9 gives ~0.95 — crosses the desk, then rests.
+  MAX_LAUNCH_SPEED: 1.9, // table-heights / second at full power
+  FRICTION_DECEL: 1.9, // table-heights / second^2 (linear kinetic friction)
+  SETTLE_SPEED: 0.035, // below this speed a body is considered at rest
+  MAX_DRAG: 0.34, // longer pull needed for full power -> finer aim control
   MIN_DRAG: 0.03, // shorter pulls are ignored (accidental taps)
-  GRAB_RADIUS: 0.12, // how close a touch must start to a pen to grab it
+  GRAB_RADIUS: 0.13, // how close a touch must start to a pen to grab it
+  // How far a pen's CENTRE must travel past the desk edge before it counts as
+  // "off" (fraction of its own radius). Adds forgiveness near the rim.
+  OFF_MARGIN: 0.55,
 };
 
 // Discrete game statuses used inside the physics `world` shared value.

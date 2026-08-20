@@ -28,6 +28,11 @@ const ink = {
   chalkFrame: '#6E4A2B',
   chalk: '#F3F0E4',
   chalkSoft: '#C9D1C0',
+  // Coloured chalk pieces for accents (player names, highlights).
+  chalkYellow: '#F2D06B',
+  chalkPink: '#EFA9C4',
+  chalkBlue: '#9EC7E8',
+  chalkGreen: '#AEE0A6',
   wood: '#C88E52',
   woodDark: '#9A6631',
   woodEdge: '#7C4F22',

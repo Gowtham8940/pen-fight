@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
@@ -39,9 +39,14 @@ export function GameScreen({ navigation }) {
   const skinA = useMemo(() => getSkin(skinAId), [skinAId]);
   const skinB = useMemo(() => getSkin(skinBId), [skinBId]);
 
+  // The chalkboard scoreboard is measured so the desk always starts below it
+  // (rather than being covered by it). Seeded with a sensible estimate.
+  const [boardH, setBoardH] = useState(150);
+  const hudTop = spacing.sm + boardH + spacing.md;
+
   const table = useMemo(
-    () => computeTableLayout(width, height, insets),
-    [width, height, insets.top, insets.bottom, insets.left, insets.right],
+    () => computeTableLayout(width, height, insets, hudTop),
+    [width, height, insets.top, insets.bottom, insets.left, insets.right, hudTop],
   );
 
   const world = useSharedValue(createWorld(table, skinA, skinB));
@@ -125,12 +130,15 @@ export function GameScreen({ navigation }) {
       />
 
       {/* Chalkboard scoreboard (the class name-list) */}
-      <View style={[styles.hud, { top: insets.top + spacing.sm, left: spacing.md, right: spacing.md }]}>
+      <View
+        style={[styles.hud, { top: insets.top + spacing.sm, left: spacing.md, right: spacing.md }]}
+        onLayout={e => setBoardH(e.nativeEvent.layout.height)}>
         <Chalkboard>
           <ScoreLine
             name={t('game.playerA')}
             score={scores.a}
             color={skinA.body}
+            chalk={theme.colors.chalkBlue}
             active={status !== GAME_STATUS.GAMEOVER && current === 'a'}
           />
           <View style={styles.chalkRule} />
@@ -138,6 +146,7 @@ export function GameScreen({ navigation }) {
             name={t('game.playerB')}
             score={scores.b}
             color={skinB.body}
+            chalk={theme.colors.chalkPink}
             active={status !== GAME_STATUS.GAMEOVER && current === 'b'}
           />
         </Chalkboard>
@@ -184,14 +193,14 @@ export function GameScreen({ navigation }) {
   );
 }
 
-/** One chalk name-list line: name, tally boxes, score. */
-function ScoreLine({ name, score, color, active }) {
+/** One chalk name-list line: name (in that player's chalk colour), tally, score. */
+function ScoreLine({ name, score, color, chalk, active }) {
   const theme = useTheme();
   const boxes = 5;
   return (
-    <View style={styles.scoreLine}>
+    <View style={[styles.scoreLine, !active && styles.dimLine]}>
       <View style={styles.nameCell}>
-        <ChalkText size="sm" color={active ? theme.colors.chalk : theme.colors.chalkSoft}>
+        <ChalkText size="sm" color={chalk || theme.colors.chalk}>
           {active ? '› ' : '  '}
           {name}
         </ChalkText>
@@ -220,6 +229,7 @@ const styles = StyleSheet.create({
   hud: { position: 'absolute' },
   chalkRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: spacing.xs },
   scoreLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dimLine: { opacity: 0.6 },
   nameCell: { flex: 1 },
   tally: { flexDirection: 'row', gap: 4 },
   tallyBox: {

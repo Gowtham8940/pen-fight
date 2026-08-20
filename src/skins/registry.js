@@ -25,51 +25,83 @@
  * @property {'default'|{price:number}} unlock
  */
 
+/**
+ * @typedef-extra
+ * @property {string} [grip]  grip-cone colour near the tip (fallback: tip)
+ * @property {string} [trim]  metal clip/ring colour (fallback: silver)
+ */
+
 /** @type {PenSkin[]} */
 export const SKINS = [
   {
+    // Pilot V5 — blue rollerball
     id: 'classic',
     nameKey: 'classic',
-    length: 96,
+    length: 102,
     radius: 30,
     mass: 1.0,
-    body: '#2563EB',
-    tip: '#1E293B',
-    cap: '#93C5FD',
+    body: '#2B5FC8',
+    cap: '#1E3A8A',
+    grip: '#24408F',
+    trim: '#C9CDD6',
+    tip: '#3A3F4A',
     unlock: 'default',
   },
   {
+    // Ruby gel pen — red barrel, gold clip
     id: 'ruby',
     nameKey: 'ruby',
-    length: 96,
+    length: 100,
     radius: 30,
     mass: 1.0,
-    body: '#DC2626',
-    tip: '#1E293B',
-    cap: '#FCA5A5',
+    body: '#D22F2A',
+    cap: '#8E1E1A',
+    grip: '#A9241F',
+    trim: '#E6C24A',
+    tip: '#2A2A2A',
     unlock: 'default',
   },
   {
-    id: 'graphite',
-    nameKey: 'graphite',
-    length: 104,
+    // Reynolds 045 — cream ballpoint with blue cap (schoolbag classic)
+    id: 'reynolds',
+    nameKey: 'reynolds',
+    length: 106,
     radius: 28,
-    mass: 1.15, // heavier + slimmer: hits harder, slides less
-    body: '#334155',
-    tip: '#0F172A',
-    cap: '#94A3B8',
+    mass: 1.1, // heavier + slim: hits harder, slides less
+    body: '#F0E9D6',
+    cap: '#1B49B4',
+    grip: '#E3D9BF',
+    trim: '#B9BEC8',
+    tip: '#2A2A2A',
     unlock: 'default',
   },
   {
+    // Green sketch/marker — fat + light, skids further
+    id: 'marker',
+    nameKey: 'marker',
+    length: 92,
+    radius: 34,
+    mass: 0.88,
+    body: '#1F9D6B',
+    cap: '#12613F',
+    grip: '#178A5E',
+    trim: '#0E4A32',
+    tip: '#0B3A28',
+    unlock: 'default',
+  },
+  {
+    // Golden Ink — premium metallic, heavy hitter
     id: 'gold',
     nameKey: 'gold',
-    length: 92,
-    radius: 32,
-    mass: 0.9, // lighter + fatter: skids further
+    length: 98,
+    radius: 31,
+    mass: 1.15,
     body: '#D4A017',
-    tip: '#7C5E10',
-    cap: '#FDE68A',
-    unlock: { price: 0 }, // reserved for donations/shop unlock later
+    cap: '#9A6E10',
+    grip: '#B98C13',
+    trim: '#F2E3A0',
+    tip: '#5A430B',
+    unlock: 'default',
   },
 ];
 
