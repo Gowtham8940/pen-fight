@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ImageBackground, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,7 @@ import { useGameStore } from '../../game/state/useGameStore';
 import { getSkin } from '../../skins/registry';
 import { SoundManager } from '../../audio/SoundManager';
 import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
+import { CLASSROOM_BG } from '../../assets/images';
 
 export function GameScreen({ navigation }) {
   const theme = useTheme();
@@ -115,7 +116,10 @@ export function GameScreen({ navigation }) {
   const turnName = t(current === 'a' ? 'game.playerA' : 'game.playerB');
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+    <ImageBackground
+      source={CLASSROOM_BG}
+      resizeMode="cover"
+      style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <GameCanvas
         world={world}
         table={table}
@@ -189,7 +193,7 @@ export function GameScreen({ navigation }) {
           </View>
         </PaperCard>
       </Modal>
-    </View>
+    </ImageBackground>
   );
 }
 

@@ -1,14 +1,29 @@
 import React from 'react';
-import { Group, RoundedRect, Line, vec } from '@shopify/react-native-skia';
+import { Group, RoundedRect, Line, Image, useImage, vec } from '@shopify/react-native-skia';
+import { DESK_SURFACE } from '../../assets/images';
 
 /**
  * The play surface: a worn wooden school desk (top-down), echoing penfight.xyz.
- * Warm oak with vertical grain, a raised edge, a chalk centre line and a couple
- * of faint carved scratches.
+ * If a realistic DESK_SURFACE image is provided it's drawn into the play rect;
+ * otherwise a hand-drawn oak desk (grain, raised edge, chalk centre line,
+ * faint carved scratches).
  */
 export function Table({ table, theme }) {
   const { x, y, w, h, cx, cy } = table;
   const r = 18;
+  const deskImg = useImage(DESK_SURFACE || null);
+
+  if (deskImg) {
+    return (
+      <Group>
+        <RoundedRect x={x - 7} y={y - 7} width={w + 14} height={h + 14} r={r + 6} color={theme.colors.woodEdge} />
+        <Group clip={{ x, y, width: w, height: h }}>
+          <Image image={deskImg} x={x} y={y} width={w} height={h} fit="cover" />
+        </Group>
+        <Line p1={vec(x + 20, cy)} p2={vec(x + w - 20, cy)} color={theme.colors.chalk} style="stroke" strokeWidth={2} opacity={0.4} />
+      </Group>
+    );
+  }
 
   // Evenly spaced vertical grain lines.
   const grain = [];
