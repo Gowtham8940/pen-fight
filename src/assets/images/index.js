@@ -14,15 +14,14 @@
 // Full-screen classroom backdrop (currently a placeholder — replace the PNG).
 export const CLASSROOM_BG = require('./classroom_bg.png');
 
-// Top-down play-desk surface. Set to require('./desk_surface.png') once added.
-export const DESK_SURFACE = null;
+// Top-down play-desk surface.
+export const DESK_SURFACE = require('./desk_surface.png');
 
-// Realistic pen sprites, keyed by skin id. Add entries as you create them, e.g.
-//   classic: require('./pen_classic.png'),
+// Realistic pen sprites, keyed by skin id (magenta keyed out + auto-cropped).
 export const PEN_IMAGES = {
-  // classic:  require('./pen_classic.png'),
-  // ruby:     require('./pen_ruby.png'),
-  // reynolds: require('./pen_reynolds.png'),
-  // marker:   require('./pen_marker.png'),
-  // gold:     require('./pen_gold.png'),
+  classic: require('./pen_classic.png'),
+  ruby: require('./pen_ruby.png'),
+  reynolds: require('./pen_reynolds.png'),
+  marker: require('./pen_marker.png'),
+  gold: require('./pen_gold.png'),
 };
