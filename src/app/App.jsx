@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import i18n from '../i18n';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { useTheme } from '../ui/theme/useTheme';
 import { RootNavigator } from './navigation/RootNavigator';
+import { AnimatedSplash } from '../ui/AnimatedSplash';
 
 function buildNavTheme(theme) {
   const base = theme.mode === 'dark' ? DarkTheme : DefaultTheme;
@@ -41,12 +42,14 @@ function AppInner() {
 }
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
           <I18nextProvider i18n={i18n}>
             <AppInner />
+            {!splashDone && <AnimatedSplash onDone={() => setSplashDone(true)} />}
           </I18nextProvider>
         </ThemeProvider>
       </SafeAreaProvider>

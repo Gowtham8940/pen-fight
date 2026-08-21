@@ -4,6 +4,9 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- Sky-blue cold-start background so there's no white flash before the
+             JS splash animation takes over. -->
+        <item name="android:windowBackground">@color/splash_bg</item>
     </style>
 
 </resources>

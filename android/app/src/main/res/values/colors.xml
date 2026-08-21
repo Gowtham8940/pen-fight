@@ -1,0 +1,4 @@
+<resources>
+    <!-- Cold-start / launch background — matches the app icon and JS splash. -->
+    <color name="splash_bg">#38C2E8</color>
+</resources>
