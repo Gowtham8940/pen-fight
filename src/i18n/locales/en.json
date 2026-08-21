@@ -5,6 +5,8 @@
     "playLocal": "Pass & Play",
     "skins": "Pens",
     "settings": "Settings",
+    "leaderboard": "Ranking",
+    "profile": "Profile",
     "classDiary": "Class Diary",
     "diaryNo": "no. 1",
     "name": "Name",
@@ -30,6 +32,9 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "sound": "Sound",
+    "haptics": "Haptics",
+    "on": "On",
+    "off": "Off",
     "muted": "Muted",
     "language": "Language"
   },
@@ -50,7 +55,8 @@
     "title": "Choose your pen",
     "player1": "Player 1 pen",
     "player2": "Player 2 pen",
-    "locked": "Locked"
+    "locked": "Locked",
+    "selected": "Selected"
   },
   "skinNames": {
     "classic": "Pilot Blue",
@@ -58,5 +64,36 @@
     "reynolds": "Reynolds 045",
     "marker": "Green Marker",
     "gold": "Golden Ink"
+  },
+  "leaderboard": {
+    "title": "Class Ranking",
+    "rankHead": "Ranking",
+    "diaryNo": "top of the class",
+    "wins": "wins",
+    "empty": "No games yet — play a match to climb the ranking!",
+    "bestStreak": "Best Streak",
+    "totalGames": "Games Played",
+    "reset": "Reset ranking"
+  },
+  "profile": {
+    "title": "Profile",
+    "nameLabel": "Your name",
+    "namePlaceholder": "Last Bench",
+    "save": "Save",
+    "saved": "Saved!",
+    "statWins": "Wins",
+    "statBest": "Best Streak",
+    "statGames": "Games"
+  },
+  "update": {
+    "title": "Update available",
+    "message": "A new version of Pen Fight is ready with fresh features and fixes.",
+    "update": "Update now",
+    "skip": "Skip"
+  },
+  "maintenance": {
+    "title": "Back soon",
+    "message": "Pen Fight is under maintenance. We're tidying the last bench — please check back in a little while.",
+    "retry": "Try again"
   }
 }

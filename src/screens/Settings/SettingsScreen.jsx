@@ -7,6 +7,7 @@ import { Text } from '../../ui/Text';
 import { spacing, radii } from '../../ui/theme/tokens';
 import { useGameStore } from '../../game/state/useGameStore';
 import { SoundManager } from '../../audio/SoundManager';
+import { haptics } from '../../lib/haptics';
 import i18n, { setLanguage } from '../../i18n';
 
 function Segmented({ options, value, onChange }) {
@@ -51,11 +52,18 @@ export function SettingsScreen() {
   const { preference, setThemePreference } = useThemeContext();
   const muted = useGameStore(s => s.muted);
   const toggleMuted = useGameStore(s => s.toggleMuted);
+  const hapticsOn = useGameStore(s => s.haptics);
+  const toggleHaptics = useGameStore(s => s.toggleHaptics);
   const [lang, setLang] = useState(i18n.language);
 
   const onToggleSound = () => {
     toggleMuted();
     SoundManager.applyMuted(!muted);
+  };
+
+  const onToggleHaptics = () => {
+    toggleHaptics();
+    if (!hapticsOn) haptics.medium(); // buzz to confirm when turning it on
   };
 
   const onChangeLang = value => {
@@ -88,11 +96,22 @@ export function SettingsScreen() {
 
       <Row title={t('settings.sound')}>
         <Segmented
-          value={muted ? 'muted' : 'on'}
+          value={muted ? 'off' : 'on'}
           onChange={onToggleSound}
           options={[
-            { value: 'on', label: '🔊' },
-            { value: 'muted', label: '🔇' },
+            { value: 'on', label: t('settings.on') },
+            { value: 'off', label: t('settings.off') },
+          ]}
+        />
+      </Row>
+
+      <Row title={t('settings.haptics')}>
+        <Segmented
+          value={hapticsOn ? 'on' : 'off'}
+          onChange={onToggleHaptics}
+          options={[
+            { value: 'on', label: t('settings.on') },
+            { value: 'off', label: t('settings.off') },
           ]}
         />
       </Row>

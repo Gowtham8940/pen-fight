@@ -22,6 +22,12 @@ export const useGameStore = create((set, get) => ({
   // Audio (persisted).
   muted: getBool(StorageKeys.muted, false),
 
+  // Haptic feedback (persisted).
+  haptics: getBool(StorageKeys.haptics, true),
+
+  // Profile display name (persisted).
+  playerName: getString(StorageKeys.playerName, 'Last Bench'),
+
   // Cumulative wins per seat across all matches (persisted) — the leaderboard.
   records: getJSON(StorageKeys.records, { a: 0, b: 0 }),
 
@@ -72,5 +78,17 @@ export const useGameStore = create((set, get) => ({
     const next = !get().muted;
     storage.set(StorageKeys.muted, next);
     set({ muted: next });
+  },
+
+  toggleHaptics: () => {
+    const next = !get().haptics;
+    storage.set(StorageKeys.haptics, next);
+    set({ haptics: next });
+  },
+
+  setPlayerName: name => {
+    const trimmed = (name || '').slice(0, 20);
+    storage.set(StorageKeys.playerName, trimmed);
+    set({ playerName: trimmed });
   },
 }));

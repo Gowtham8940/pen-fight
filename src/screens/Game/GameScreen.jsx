@@ -21,6 +21,7 @@ import { WORLD_STATUS } from '../../game/engine/constants';
 import { useGameStore } from '../../game/state/useGameStore';
 import { getSkin } from '../../skins/registry';
 import { SoundManager } from '../../audio/SoundManager';
+import { haptics } from '../../lib/haptics';
 import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
 import { CLASSROOM_BG, DESK_SURFACE, PEN_IMAGES } from '../../assets/images';
 
@@ -82,6 +83,7 @@ export function GameScreen({ navigation }) {
   const onLaunch = useCallback(power => {
     useGameStore.getState().setSimulating();
     SoundManager.play('flick', Math.max(0.4, power));
+    haptics.medium();
   }, []);
 
   const onHit = useCallback(() => {
@@ -89,6 +91,7 @@ export function GameScreen({ navigation }) {
     if (now - lastHit.current < 120) return; // debounce repeated contact frames
     lastHit.current = now;
     SoundManager.play('clack');
+    haptics.light();
   }, []);
 
   const onSettle = useCallback(() => {
@@ -109,6 +112,7 @@ export function GameScreen({ navigation }) {
     useStreakStore.getState().recordPlay(); // count this completed match toward the daily streak
     SoundManager.play('penoff');
     setTimeout(() => SoundManager.play('win'), 350);
+    haptics.success();
   }, []);
 
   const onRematch = useCallback(() => {

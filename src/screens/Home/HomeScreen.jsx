@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../ui/theme/useTheme';
 import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
+import { Emoji } from '../../ui/Emoji';
 import { PaperCard } from '../../ui/PaperCard';
 import { Chalkboard, ChalkText } from '../../ui/Chalkboard';
 import { StatRow } from '../../ui/StatRow';
@@ -83,10 +84,25 @@ export function HomeScreen({ navigation }) {
             onPress={() => navigation.navigate(Routes.SkinSelect)}
           />
           <Button
-            title="🔥"
+            title=""
+            leading={<Emoji size={22}>🔥</Emoji>}
             variant="outline"
             style={styles.flexSmall}
             onPress={() => navigation.navigate(Routes.Streak)}
+          />
+        </View>
+        <View style={styles.actionRow}>
+          <Button
+            title={t('home.leaderboard')}
+            variant="outline"
+            style={styles.flex}
+            onPress={() => navigation.navigate(Routes.Leaderboard)}
+          />
+          <Button
+            title={t('home.profile')}
+            variant="outline"
+            style={styles.flex}
+            onPress={() => navigation.navigate(Routes.Profile)}
           />
         </View>
         <Button

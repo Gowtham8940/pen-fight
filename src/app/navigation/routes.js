@@ -4,4 +4,6 @@ export const Routes = {
   Settings: 'Settings',
   SkinSelect: 'SkinSelect',
   Streak: 'Streak',
+  Leaderboard: 'Leaderboard',
+  Profile: 'Profile',
 };
