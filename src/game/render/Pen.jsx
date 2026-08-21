@@ -1,26 +1,26 @@
 import React from 'react';
-import { Group, RoundedRect, Circle, Shadow, Image, useImage } from '@shopify/react-native-skia';
+import { Group, RoundedRect, Circle, Shadow, Image } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
-import { PEN_IMAGES } from '../../assets/images';
 
 /**
  * Renders a pen driven by its physics body in the shared `world`.
  *
- * If a realistic sprite exists for this skin (PEN_IMAGES[skin.id]) it is drawn
- * as a Skia <Image>; otherwise it falls back to a hand-drawn vector pen
+ * `image` (a preloaded SkImage, or null) is passed in by the parent so all
+ * sprites are loaded + gated before the canvas mounts (no fallback flash).
+ * If present it's drawn as a Skia <Image>; otherwise a hand-drawn vector pen
  * (barrel, cap, metal clip + trim ring, grip, nib, gloss). Geometry is centred
  * on the origin so rotation pivots about the pen's middle.
  *
  * Sprite convention: a top-down pen standing VERTICAL, tip pointing DOWN,
  * transparent background, centred in its canvas.
  */
-export function Pen({ world, bodyKey, skin, penScale, isCurrent }) {
+export function Pen({ world, bodyKey, skin, penScale, isCurrent, image }) {
   const length = skin.length * penScale;
   const width = skin.radius * penScale * 0.82;
   const halfL = length / 2;
   const halfW = width / 2;
 
-  const penImg = useImage(PEN_IMAGES[skin.id] || null);
+  const penImg = image;
 
   const transform = useDerivedValue(() => {
     const b = world.value[bodyKey];

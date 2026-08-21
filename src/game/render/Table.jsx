@@ -1,17 +1,15 @@
 import React from 'react';
-import { Group, RoundedRect, Line, Image, useImage, vec } from '@shopify/react-native-skia';
-import { DESK_SURFACE } from '../../assets/images';
+import { Group, RoundedRect, Line, Image, vec } from '@shopify/react-native-skia';
 
 /**
  * The play surface: a worn wooden school desk (top-down), echoing penfight.xyz.
- * If a realistic DESK_SURFACE image is provided it's drawn into the play rect;
- * otherwise a hand-drawn oak desk (grain, raised edge, chalk centre line,
- * faint carved scratches).
+ * `deskImg` (a preloaded SkImage, or null) is passed in by the parent; if
+ * present it's drawn into the play rect, otherwise a hand-drawn oak desk
+ * (grain, raised edge, chalk centre line, faint carved scratches).
  */
-export function Table({ table, theme }) {
+export function Table({ table, theme, deskImg }) {
   const { x, y, w, h, cx, cy } = table;
   const r = 18;
-  const deskImg = useImage(DESK_SURFACE || null);
 
   if (deskImg) {
     return (

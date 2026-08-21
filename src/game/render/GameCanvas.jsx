@@ -23,6 +23,9 @@ export function GameCanvas({
   skinA,
   skinB,
   theme,
+  deskImg, // preloaded SkImages (loaded + gated by GameScreen to avoid a
+  penImgA, // fallback flash on first render)
+  penImgB,
   currentKey, // 'a' | 'b' | null — which pen shows the highlight (store-driven)
   onLaunch,
   onHit,
@@ -90,13 +93,14 @@ export function GameCanvas({
   return (
     <GestureDetector gesture={pan}>
       <Canvas style={styles.canvas}>
-        <Table table={table} theme={theme} />
+        <Table table={table} theme={theme} deskImg={deskImg} />
         <Pen
           world={world}
           bodyKey="a"
           skin={skinA}
           penScale={table.penScale}
           isCurrent={currentKey === 'a'}
+          image={penImgA}
         />
         <Pen
           world={world}
@@ -104,6 +108,7 @@ export function GameCanvas({
           skin={skinB}
           penScale={table.penScale}
           isCurrent={currentKey === 'b'}
+          image={penImgB}
         />
         <AimIndicator world={world} table={table} theme={theme} />
       </Canvas>

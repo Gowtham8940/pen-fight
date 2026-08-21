@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../ui/theme/useTheme';
 import { Text } from '../../ui/Text';
@@ -7,15 +7,21 @@ import { spacing, radii } from '../../ui/theme/tokens';
 import { scale } from '../../lib/responsive';
 import { SKINS, isSkinOwned } from '../../skins/registry';
 import { useGameStore } from '../../game/state/useGameStore';
+import { PEN_IMAGES } from '../../assets/images';
 
-/** Lightweight View-based pen preview (no Skia needed in a list). */
+/** Pen preview — real sprite if we have one, else a coloured capsule. */
 function PenPreview({ skin }) {
+  const img = PEN_IMAGES[skin.id];
   return (
     <View style={styles.preview}>
-      <View style={[styles.penBody, { backgroundColor: skin.body }]}>
-        <View style={[styles.penCap, { backgroundColor: skin.cap }]} />
-        <View style={[styles.penTip, { backgroundColor: skin.tip }]} />
-      </View>
+      {img ? (
+        <Image source={img} style={styles.penImg} resizeMode="contain" />
+      ) : (
+        <View style={[styles.penBody, { backgroundColor: skin.body }]}>
+          <View style={[styles.penCap, { backgroundColor: skin.cap }]} />
+          <View style={[styles.penTip, { backgroundColor: skin.tip }]} />
+        </View>
+      )}
     </View>
   );
 }
@@ -112,7 +118,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
-  preview: { height: scale(72), justifyContent: 'center', alignItems: 'center' },
+  preview: { height: scale(84), justifyContent: 'center', alignItems: 'center' },
+  penImg: { height: scale(84), width: scale(44) },
   penBody: {
     width: scale(18),
     height: scale(60),

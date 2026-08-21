@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ImageBackground, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
+import { useImage } from '@shopify/react-native-skia';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '../../ui/theme/useTheme';
@@ -21,7 +22,7 @@ import { useGameStore } from '../../game/state/useGameStore';
 import { getSkin } from '../../skins/registry';
 import { SoundManager } from '../../audio/SoundManager';
 import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
-import { CLASSROOM_BG } from '../../assets/images';
+import { CLASSROOM_BG, DESK_SURFACE, PEN_IMAGES } from '../../assets/images';
 
 export function GameScreen({ navigation }) {
   const theme = useTheme();
@@ -39,6 +40,16 @@ export function GameScreen({ navigation }) {
 
   const skinA = useMemo(() => getSkin(skinAId), [skinAId]);
   const skinB = useMemo(() => getSkin(skinBId), [skinBId]);
+
+  // Preload the Skia images here and gate the canvas on them, so the desk/pens
+  // never flash their hand-drawn fallback while the real sprites decode.
+  const deskImg = useImage(DESK_SURFACE || null);
+  const penImgA = useImage(PEN_IMAGES[skinAId] || null);
+  const penImgB = useImage(PEN_IMAGES[skinBId] || null);
+  const assetsReady =
+    (!DESK_SURFACE || deskImg) &&
+    (!PEN_IMAGES[skinAId] || penImgA) &&
+    (!PEN_IMAGES[skinBId] || penImgB);
 
   // The chalkboard scoreboard is measured so the desk always starts below it
   // (rather than being covered by it). Seeded with a sensible estimate.
@@ -120,18 +131,25 @@ export function GameScreen({ navigation }) {
       source={CLASSROOM_BG}
       resizeMode="cover"
       style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <GameCanvas
-        world={world}
-        table={table}
-        skinA={skinA}
-        skinB={skinB}
-        theme={theme}
-        currentKey={currentKey}
-        onLaunch={onLaunch}
-        onHit={onHit}
-        onSettle={onSettle}
-        onGameOver={onGameOver}
-      />
+      {assetsReady ? (
+        <GameCanvas
+          world={world}
+          table={table}
+          skinA={skinA}
+          skinB={skinB}
+          theme={theme}
+          deskImg={deskImg}
+          penImgA={penImgA}
+          penImgB={penImgB}
+          currentKey={currentKey}
+          onLaunch={onLaunch}
+          onHit={onHit}
+          onSettle={onSettle}
+          onGameOver={onGameOver}
+        />
+      ) : (
+        <View style={styles.loading} />
+      )}
 
       {/* Chalkboard scoreboard (the class name-list) */}
       <View
@@ -230,6 +248,7 @@ function ScoreLine({ name, score, color, chalk, active }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  loading: { flex: 1 },
   hud: { position: 'absolute' },
   chalkRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: spacing.xs },
   scoreLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

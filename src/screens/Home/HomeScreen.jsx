@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ImageBackground, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import { StatRow } from '../../ui/StatRow';
 import { spacing } from '../../ui/theme/tokens';
 import { Routes } from '../../app/navigation/routes';
 import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
+import { CLASSROOM_BG } from '../../assets/images';
 
 export function HomeScreen({ navigation }) {
   const theme = useTheme();
@@ -22,7 +23,9 @@ export function HomeScreen({ navigation }) {
   const totalGames = useStreakStore(s => s.totalGames);
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+    <ImageBackground source={CLASSROOM_BG} resizeMode="cover" style={styles.bg}>
+      <View style={[styles.scrim, { backgroundColor: theme.colors.background }]} pointerEvents="none" />
+      <SafeAreaView style={styles.root}>
       {/* Chalkboard header */}
       <Animated.View entering={FadeInDown.duration(500)}>
         <Chalkboard style={styles.board}>
@@ -92,11 +95,14 @@ export function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate(Routes.Settings)}
         />
       </Animated.View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  bg: { flex: 1 },
+  scrim: { ...StyleSheet.absoluteFillObject, opacity: 0.35 },
   root: { flex: 1, padding: spacing.lg, gap: spacing.lg },
   board: { marginTop: spacing.sm },
   center: { textAlign: 'center' },

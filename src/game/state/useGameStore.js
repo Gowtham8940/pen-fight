@@ -5,7 +5,7 @@
  */
 import { create } from 'zustand';
 import { GAME_STATUS, other } from './gameMachine';
-import { storage, StorageKeys, getBool, getString, getJSON } from '../../lib/storage';
+import { storage, StorageKeys, getBool, getString, getJSON, setJSON } from '../../lib/storage';
 import { DEFAULT_SKIN_A, DEFAULT_SKIN_B } from '../../skins/registry';
 
 export const useGameStore = create((set, get) => ({
@@ -22,6 +22,9 @@ export const useGameStore = create((set, get) => ({
   // Audio (persisted).
   muted: getBool(StorageKeys.muted, false),
 
+  // Cumulative wins per seat across all matches (persisted) — the leaderboard.
+  records: getJSON(StorageKeys.records, { a: 0, b: 0 }),
+
   // --- turn lifecycle ---
   startMatch: () => set({ status: GAME_STATUS.AIMING, current: 'a', winner: null }),
 
@@ -32,15 +35,25 @@ export const useGameStore = create((set, get) => ({
     set(state => ({ status: GAME_STATUS.AIMING, current: other(state.current) })),
 
   endGame: winner =>
-    set(state => ({
-      status: GAME_STATUS.GAMEOVER,
-      winner,
-      scores: { ...state.scores, [winner]: state.scores[winner] + 1 },
-    })),
+    set(state => {
+      const records = { ...state.records, [winner]: state.records[winner] + 1 };
+      setJSON(StorageKeys.records, records);
+      return {
+        status: GAME_STATUS.GAMEOVER,
+        winner,
+        scores: { ...state.scores, [winner]: state.scores[winner] + 1 },
+        records,
+      };
+    }),
 
   rematch: () => set({ status: GAME_STATUS.AIMING, current: 'a', winner: null }),
 
   resetScores: () => set({ scores: { a: 0, b: 0 } }),
+
+  resetRecords: () => {
+    setJSON(StorageKeys.records, { a: 0, b: 0 });
+    set({ records: { a: 0, b: 0 } });
+  },
 
   goHome: () => set({ status: GAME_STATUS.IDLE, winner: null }),
 

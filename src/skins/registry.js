@@ -37,8 +37,8 @@ export const SKINS = [
     // Pilot V5 — blue rollerball
     id: 'classic',
     nameKey: 'classic',
-    length: 102,
-    radius: 30,
+    length: 135,
+    radius: 34,
     mass: 1.0,
     body: '#2B5FC8',
     cap: '#1E3A8A',
@@ -51,8 +51,8 @@ export const SKINS = [
     // Ruby gel pen — red barrel, gold clip
     id: 'ruby',
     nameKey: 'ruby',
-    length: 100,
-    radius: 30,
+    length: 133,
+    radius: 34,
     mass: 1.0,
     body: '#D22F2A',
     cap: '#8E1E1A',
@@ -65,8 +65,8 @@ export const SKINS = [
     // Reynolds 045 — cream ballpoint with blue cap (schoolbag classic)
     id: 'reynolds',
     nameKey: 'reynolds',
-    length: 106,
-    radius: 28,
+    length: 140,
+    radius: 31,
     mass: 1.1, // heavier + slim: hits harder, slides less
     body: '#F0E9D6',
     cap: '#1B49B4',
@@ -79,8 +79,8 @@ export const SKINS = [
     // Green sketch/marker — fat + light, skids further
     id: 'marker',
     nameKey: 'marker',
-    length: 92,
-    radius: 34,
+    length: 122,
+    radius: 38,
     mass: 0.88,
     body: '#1F9D6B',
     cap: '#12613F',
@@ -93,8 +93,8 @@ export const SKINS = [
     // Golden Ink — premium metallic, heavy hitter
     id: 'gold',
     nameKey: 'gold',
-    length: 98,
-    radius: 31,
+    length: 130,
+    radius: 34,
     mass: 1.15,
     body: '#D4A017',
     cap: '#9A6E10',

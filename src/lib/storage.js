@@ -17,6 +17,7 @@ export const StorageKeys = {
   skinB: 'skins.playerB',
   ownedSkins: 'skins.owned', // JSON array — hook for later donations/shop unlocks
   streak: 'streak.data', // JSON blob for the daily-streak feature
+  records: 'records.wins', // cumulative wins per seat, for the leaderboard
 };
 
 export function getString(key, fallback) {

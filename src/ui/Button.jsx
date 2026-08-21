@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useTheme } from './theme/useTheme';
-import { radii, spacing } from './theme/tokens';
+import { radii, spacing, fontSizes } from './theme/tokens';
 import { scale } from '../lib/responsive';
 import { Text } from './Text';
 
@@ -48,15 +48,17 @@ export function Button({ title, onPress, variant = 'primary', disabled, style, l
       ]}>
       <View style={styles.row}>
         {leading}
-        {isLink ? (
-          <Text family="hand" variant="body" color={theme.colors.ink} style={styles.underline}>
-            {title}
-          </Text>
-        ) : (
-          <Text family="display" variant="subheading" color={fg}>
-            {title}
-          </Text>
-        )}
+        {title ? (
+          isLink ? (
+            <Text family="hand" variant="body" color={theme.colors.ink} style={styles.underline}>
+              {title}
+            </Text>
+          ) : (
+            <Text family="display" variant="subheading" color={fg} style={styles.label}>
+              {title}
+            </Text>
+          )
+        ) : null}
       </View>
     </AnimatedPressable>
   );
@@ -78,6 +80,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   link: { paddingVertical: spacing.sm, alignItems: 'center' },
+  // Generous line height so emoji labels (e.g. 🔥) aren't vertically clipped.
+  label: { lineHeight: scale(fontSizes.lg * 1.15) },
   underline: { textDecorationLine: 'underline' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });
