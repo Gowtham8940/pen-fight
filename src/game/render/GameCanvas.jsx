@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import { Canvas } from '@shopify/react-native-skia';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useFrameCallback, runOnJS } from 'react-native-reanimated';
-import { PHYSICS, WORLD_STATUS } from '../engine/constants';
+import { PHYSICS, WORLD_STATUS, FALL_FRAMES } from '../engine/constants';
 import { integrateBody, isSettled } from '../engine/physics';
 import { resolveCollision } from '../engine/collision';
 import { isOffTable } from '../engine/boundary';
@@ -11,6 +11,7 @@ import { useFlickGesture } from '../input/useFlickGesture';
 import { Table } from './Table';
 import { Pen } from './Pen';
 import { AimIndicator } from './AimIndicator';
+import { SparkFX } from './SparkFX';
 
 /**
  * Hosts the Skia canvas, the fixed-timestep physics frame loop (UI thread), and
@@ -27,6 +28,7 @@ export function GameCanvas({
   penImgA, // fallback flash on first render)
   penImgB,
   currentKey, // 'a' | 'b' | null — which pen shows the highlight (store-driven)
+  aimEnabled = true, // false while the computer is taking its turn
   onLaunch,
   onHit,
   onSettle,
@@ -37,7 +39,9 @@ export function GameCanvas({
   useFrameCallback(info => {
     'worklet';
     const w = world.value;
-    if (w.status !== WORLD_STATUS.SIMULATING) return;
+    const sim = w.status === WORLD_STATUS.SIMULATING;
+    const falling = w.status === WORLD_STATUS.FALLING;
+    if (!sim && !falling) return;
 
     let dt = (info.timeSincePreviousFrame ?? 16.6) / 1000;
     if (dt > PHYSICS.MAX_FRAME_DT) dt = PHYSICS.MAX_FRAME_DT;
@@ -45,33 +49,73 @@ export function GameCanvas({
     let remaining = dt;
     let steps = 0;
     let hit = false;
+    let hitStrength = 0;
     let fell = null;
 
     while (remaining > 1e-5 && steps < PHYSICS.MAX_SUBSTEPS) {
       const step = remaining < PHYSICS.SUBSTEP ? remaining : PHYSICS.SUBSTEP;
       integrateBody(w.a, step, tuning);
       integrateBody(w.b, step, tuning);
-      if (resolveCollision(w.a, w.b, tuning)) hit = true;
-      if (isOffTable(w.a, table)) {
-        fell = 'a';
-        break;
-      }
-      if (isOffTable(w.b, table)) {
-        fell = 'b';
-        break;
+      if (sim) {
+        const hitInfo = resolveCollision(w.a, w.b, tuning);
+        if (hitInfo) {
+          hit = true;
+          if (hitInfo.j > 0) {
+            // Normalize against a full-power launch so the pop/spark/shake
+            // scale sensibly regardless of device size or pen mass.
+            const strength = Math.min(1, hitInfo.j / (tuning.maxLaunchSpeed * 0.9));
+            hitStrength = Math.max(hitStrength, strength);
+            w.a.hitFlash = Math.max(w.a.hitFlash, strength);
+            w.b.hitFlash = Math.max(w.b.hitFlash, strength);
+            w.sparkX = hitInfo.cx;
+            w.sparkY = hitInfo.cy;
+            w.sparkLife = 1;
+            w.sparkStrength = strength;
+          }
+        }
+        if (isOffTable(w.a, table)) {
+          fell = 'a';
+          break;
+        }
+        if (isOffTable(w.b, table)) {
+          fell = 'b';
+          break;
+        }
       }
       remaining -= step;
       steps += 1;
     }
 
-    if (hit) runOnJS(onHit)();
+    // Decay the spark burst once per frame (not per substep).
+    if (w.sparkLife > 0) {
+      w.sparkLife -= dt * PHYSICS.SPARK_DECAY_PER_SEC;
+      if (w.sparkLife < 0) w.sparkLife = 0;
+    }
 
-    if (fell) {
-      w[fell].alive = false;
-      w.winner = fell === 'a' ? 'b' : 'a';
-      w.status = WORLD_STATUS.GAMEOVER;
+    if (hit) runOnJS(onHit)(hitStrength);
+
+    // A pen just crossed an edge → let it visibly keep sliding off for a beat
+    // (FALLING) so the player clearly sees it leave the desk, THEN declare it.
+    if (sim && fell) {
+      w.status = WORLD_STATUS.FALLING;
+      w.faller = fell;
+      w.fallFrames = 0;
       world.value = { ...w };
-      runOnJS(onGameOver)(w.winner);
+      return;
+    }
+
+    if (falling) {
+      w.fallFrames = (w.fallFrames || 0) + 1;
+      if (w.fallFrames >= FALL_FRAMES) {
+        const f = w.faller;
+        w[f].alive = false;
+        w.winner = f === 'a' ? 'b' : 'a';
+        w.status = WORLD_STATUS.GAMEOVER;
+        world.value = { ...w };
+        runOnJS(onGameOver)(w.winner);
+        return;
+      }
+      world.value = { ...w };
       return;
     }
 
@@ -88,7 +132,7 @@ export function GameCanvas({
     world.value = { ...w };
   }, true);
 
-  const pan = useFlickGesture(world, table, onLaunch);
+  const pan = useFlickGesture(world, table, onLaunch, aimEnabled);
 
   return (
     <GestureDetector gesture={pan}>
@@ -111,6 +155,7 @@ export function GameCanvas({
           image={penImgB}
         />
         <AimIndicator world={world} table={table} theme={theme} />
+        <SparkFX world={world} />
       </Canvas>
     </GestureDetector>
   );

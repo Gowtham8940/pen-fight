@@ -1,7 +1,6 @@
 /**
- * Off-table detection. A pen is "off" once its CENTER travels past the desk
- * edge by a margin (a fraction of its own radius), which stops pens that merely
- * graze the rim from instantly losing. Worklet.
+ * Off-table detection. A pen is "off" once its CENTRE crosses ANY edge by a
+ * small margin (all four sides are open — nothing bounces). Worklet.
  */
 import { PHYSICS } from './constants';
 

@@ -22,9 +22,22 @@ export function Pen({ world, bodyKey, skin, penScale, isCurrent, image }) {
 
   const penImg = image;
 
+  // Active-player indicator lives on the CAP (top, -halfL side) instead of a
+  // halo around the whole pen — a bright glow sized to just the cap.
+  const capGlowY = -halfL * 0.74;
+  const capGlowR = halfW * 1.45;
+
   const transform = useDerivedValue(() => {
     const b = world.value[bodyKey];
-    return [{ translateX: b.x }, { translateY: b.y }, { rotate: b.angle }];
+    // Quick "hit pop": a small scale punch that eases back to normal as
+    // hitFlash decays (set by the physics loop on a real collision).
+    const pop = 1 + (b.hitFlash || 0) * 0.16;
+    return [
+      { translateX: b.x },
+      { translateY: b.y },
+      { rotate: b.angle },
+      { scale: pop },
+    ];
   });
   const opacity = useDerivedValue(() => (world.value[bodyKey].alive ? 1 : 0.25));
 
@@ -34,9 +47,7 @@ export function Pen({ world, bodyKey, skin, penScale, isCurrent, image }) {
     const imgW = length * aspect;
     return (
       <Group transform={transform} opacity={opacity}>
-        {isCurrent && (
-          <Circle cx={0} cy={0} r={halfL + halfW * 1.6} color={skin.cap} opacity={0.22} />
-        )}
+        {isCurrent && <Circle cx={0} cy={capGlowY} r={capGlowR} color="#FFF3B0" opacity={0.65} />}
         <Image image={penImg} x={-imgW / 2} y={-halfL} width={imgW} height={length} fit="contain">
           <Shadow dx={0} dy={3} blur={6} color="rgba(0,0,0,0.35)" />
         </Image>
@@ -53,9 +64,7 @@ export function Pen({ world, bodyKey, skin, penScale, isCurrent, image }) {
 
   return (
     <Group transform={transform} opacity={opacity}>
-      {isCurrent && (
-        <Circle cx={0} cy={0} r={halfL + halfW * 1.5} color={skin.cap} opacity={0.22} />
-      )}
+      {isCurrent && <Circle cx={0} cy={capGlowY} r={capGlowR} color="#FFF3B0" opacity={0.65} />}
       <RoundedRect x={-halfW} y={-halfL} width={width} height={length} r={halfW} color={skin.body}>
         <Shadow dx={0} dy={3} blur={6} color="rgba(0,0,0,0.35)" />
       </RoundedRect>

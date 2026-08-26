@@ -1,30 +1,64 @@
 /**
- * Pan gesture that grabs the current player's pen and flicks it, slingshot
- * style: drag away from the pen to pull back, release to launch it in the
- * opposite direction with power proportional to the pull distance.
+ * Pan gesture that grabs the current player's pen at one of THREE handles — its
+ * centre or either end — and flicks it slingshot style: pull the grabbed handle
+ * back, release to launch. The pull direction/angle sets the travel direction;
+ * grabbing an END (off-centre) also imparts spin, so you can curve/tumble shots.
  *
- * Runs entirely on the UI thread (gesture callbacks are worklets); it reads and
- * writes the shared `world`. `onLaunch(powerFraction)` bridges to JS for sound
- * and the SIMULATING status flip.
+ * Runs on the UI thread (worklets); reads/writes the shared `world`.
  */
 import { Gesture } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { WORLD_STATUS } from '../engine/constants';
-import { dist, len, normalize, clamp } from '../engine/vec2';
+import { len, normalize, clamp } from '../engine/vec2';
 
-export function useFlickGesture(world, table, onLaunch) {
+export function useFlickGesture(world, table, onLaunch, enabled = true) {
   const tuning = table.tuning;
 
   return Gesture.Pan()
+    .enabled(enabled)
     .onBegin(e => {
       'worklet';
       const w = world.value;
       if (w.status !== WORLD_STATUS.AIMING) return;
       const b = w[w.current];
       if (!b.alive) return;
-      // Must start the drag near the current pen to grab it.
-      if (dist(e.x, e.y, b.x, b.y) > tuning.grabRadius) return;
+
+      // The pen's long axis (unit) and its three grab handles.
+      const axX = -Math.sin(b.angle);
+      const axY = Math.cos(b.angle);
+      const half = b.half || 0;
+      // handles: center, end +, end -
+      const hx0 = b.x;
+      const hy0 = b.y;
+      const hx1 = b.x + axX * half;
+      const hy1 = b.y + axY * half;
+      const hx2 = b.x - axX * half;
+      const hy2 = b.y - axY * half;
+
+      const d0 = len(e.x - hx0, e.y - hy0);
+      const d1 = len(e.x - hx1, e.y - hy1);
+      const d2 = len(e.x - hx2, e.y - hy2);
+
+      let gx = hx0;
+      let gy = hy0;
+      let best = d0;
+      if (d1 < best) {
+        best = d1;
+        gx = hx1;
+        gy = hy1;
+      }
+      if (d2 < best) {
+        best = d2;
+        gx = hx2;
+        gy = hy2;
+      }
+      if (best > tuning.grabRadius) return; // didn't grab any handle
+
       w.aiming = true;
+      w.grabX = gx;
+      w.grabY = gy;
+      w.grabOffX = gx - b.x;
+      w.grabOffY = gy - b.y;
       w.aimX = e.x;
       w.aimY = e.y;
       world.value = { ...w };
@@ -42,8 +76,10 @@ export function useFlickGesture(world, table, onLaunch) {
       const w = world.value;
       if (!w.aiming) return;
       const b = w[w.current];
-      const pullX = b.x - w.aimX;
-      const pullY = b.y - w.aimY;
+      // Pull vector = from finger back to the grabbed handle -> launch heads
+      // that way (slingshot).
+      const pullX = w.grabX - w.aimX;
+      const pullY = w.grabY - w.aimY;
       const pull = len(pullX, pullY);
 
       w.aiming = false;
@@ -54,13 +90,19 @@ export function useFlickGesture(world, table, onLaunch) {
         const speed = power * tuning.maxLaunchSpeed;
         b.vx = dx * speed;
         b.vy = dy * speed;
-        b.omega = 0;
+
+        // Spin from an off-centre grab: cross(grabOffset, launchDir), scaled by
+        // how far out the grab was (0 at centre, 1 at a tip).
+        const half = b.half || 1;
+        const offFrac = clamp(len(w.grabOffX, w.grabOffY) / half, 0, 1);
+        const cross = (w.grabOffX * dy - w.grabOffY * dx) / half;
+        b.omega = cross * offFrac * power * tuning.launchSpin;
+
         w.status = WORLD_STATUS.SIMULATING;
         w.settle = 0;
         world.value = { ...w };
         runOnJS(onLaunch)(power);
       } else {
-        // Too short — treat as a cancelled aim.
         world.value = { ...w };
       }
     })

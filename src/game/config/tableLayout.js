@@ -28,24 +28,45 @@ export function computeTableLayout(width, height, insets, hudTop = HUD_TOP) {
     minDrag: PHYSICS.MIN_DRAG * h,
     grabRadius: PHYSICS.GRAB_RADIUS * h,
     restitution: PHYSICS.RESTITUTION,
+    friction: PHYSICS.COLLISION_FRICTION,
+    impactRetain: PHYSICS.IMPACT_RETAIN,
     spinTransfer: PHYSICS.SPIN_TRANSFER,
     angularRetainPerSec: PHYSICS.ANGULAR_DAMPING,
+    wallRestitution: PHYSICS.WALL_RESTITUTION,
+    launchSpin: PHYSICS.LAUNCH_SPIN,
   };
 
   return { x, y, w, h, cx: x + w / 2, cy: y + h / 2, penScale, tuning };
 }
 
 function makeBody(cx, cy, skin, penScale) {
+  // Simple circle collider (proven stable). `half` is kept only so the input
+  // layer can place the 3 grab handles (centre + both ends) along the pen's
+  // drawn length — it does not affect collision.
+  //
+  // CAPSULE collider, matching the drawn pen exactly: a spine down the pen's
+  // length with `radius` = the pen's half-width. A circle can't represent a
+  // long thin pen — width-sized it misses tip overlaps, length-sized it
+  // collides across ~50px of empty air.
+  const length = skin.length * penScale;
+  // Same half-width the renderer uses (Pen.jsx: skin.radius * penScale * 0.82,
+  // halved), so the collider lines up with the pixels on screen.
+  const capRadius = skin.radius * penScale * 0.41;
   return {
     x: cx,
     y: cy,
     vx: 0,
     vy: 0,
-    angle: 0, // pens start upright (aligned with the y axis)
+    angle: Math.PI / 2, // pens start lying horizontal (across the desk)
     omega: 0,
-    radius: skin.radius * penScale,
+    radius: capRadius,
+    // Spine is shortened by the cap radius at each end so the capsule's rounded
+    // ends land exactly on the pen's tips (total = spine + 2 caps = length).
+    spineHalf: Math.max(0, length / 2 - capRadius),
+    half: length / 2, // full half-length — used by the input layer's grab handles
     mass: skin.mass,
     alive: true,
+    hitFlash: 0, // visual-only "just got hit" pop, decayed in integrateBody
   };
 }
 
@@ -59,6 +80,18 @@ export function createWorld(table, skinA, skinB) {
     aiming: false,
     aimX: 0,
     aimY: 0,
+    // Grab point (one of the pen's 3 handles) the drag started from, and its
+    // offset from the pen centre (drives launch spin).
+    grabX: 0,
+    grabY: 0,
+    grabOffX: 0,
+    grabOffY: 0,
+    // Contact-spark burst (visual only): position, remaining life (1->0),
+    // and a 0..1 strength that scales its size/brightness.
+    sparkX: 0,
+    sparkY: 0,
+    sparkLife: 0,
+    sparkStrength: 0,
     a: makeBody(table.cx, table.y + table.h * 0.8, skinA, table.penScale),
     b: makeBody(table.cx, table.y + table.h * 0.2, skinB, table.penScale),
   };

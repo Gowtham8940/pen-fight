@@ -1,42 +1,45 @@
 import React from 'react';
-import { Group, Line, Circle } from '@shopify/react-native-skia';
+import { Group, Line, Circle, DashPathEffect } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { normalize, len, clamp } from '../engine/vec2';
 
 /**
- * Slingshot aim overlay shown while the current player drags their pen.
- * - a muted line follows the finger (the "pull")
- * - a bright line + dot projects the launch direction, its length scaling
- *   with power (0..1 of max drag)
+ * Slingshot aim overlay: a plain dashed line from the grabbed handle to your
+ * finger — the pulling side only. No arrowhead, nothing drawn on the
+ * launch/target side.
  */
 export function AimIndicator({ world, table, theme }) {
   const tuning = table.tuning;
-  const previewMax = table.h * 0.34;
 
   const opacity = useDerivedValue(() => (world.value.aiming ? 1 : 0));
+  const grabPt = useDerivedValue(() => ({ x: world.value.grabX, y: world.value.grabY }));
 
-  const penPt = useDerivedValue(() => {
-    const b = world.value[world.value.current];
-    return { x: b.x, y: b.y };
+  // Line end sits at the finger, clamped to the same max-drag distance used
+  // for power, so it never overshoots what actually affects the shot.
+  const tipPt = useDerivedValue(() => {
+    const gx = world.value.grabX;
+    const gy = world.value.grabY;
+    const pull = len(world.value.aimX - gx, world.value.aimY - gy);
+    const [dx, dy] = normalize(world.value.aimX - gx, world.value.aimY - gy);
+    const d = Math.min(pull, tuning.maxDrag);
+    return { x: gx + dx * d, y: gy + dy * d };
   });
 
-  const fingerPt = useDerivedValue(() => ({ x: world.value.aimX, y: world.value.aimY }));
-
-  const launchPt = useDerivedValue(() => {
-    const b = world.value[world.value.current];
-    const pullX = b.x - world.value.aimX;
-    const pullY = b.y - world.value.aimY;
-    const [dx, dy] = normalize(pullX, pullY);
-    const power = clamp(len(pullX, pullY) / tuning.maxDrag, 0, 1);
-    const l = power * previewMax;
-    return { x: b.x + dx * l, y: b.y + dy * l };
+  const powerColor = useDerivedValue(() => {
+    const gx = world.value.grabX;
+    const gy = world.value.grabY;
+    const power = clamp(len(world.value.aimX - gx, world.value.aimY - gy) / tuning.maxDrag, 0, 1);
+    return power > 0.7 ? theme.colors.red : theme.colors.chalk;
   });
 
   return (
     <Group opacity={opacity}>
-      <Line p1={penPt} p2={fingerPt} color={theme.colors.textMuted} style="stroke" strokeWidth={3} />
-      <Line p1={penPt} p2={launchPt} color={theme.colors.accent} style="stroke" strokeWidth={6} strokeCap="round" />
-      <Circle c={launchPt} r={9} color={theme.colors.accent} />
+      {/* dashed pull line: grab handle -> finger, nothing beyond it */}
+      <Line p1={grabPt} p2={tipPt} color={powerColor} style="stroke" strokeWidth={5} strokeCap="round">
+        <DashPathEffect intervals={[16, 12]} />
+      </Line>
+      {/* grab handle dot */}
+      <Circle c={grabPt} r={7} color={theme.colors.accent} />
     </Group>
   );
 }

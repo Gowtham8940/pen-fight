@@ -75,7 +75,15 @@ export function HomeScreen({ navigation }) {
 
       {/* Actions */}
       <Animated.View entering={FadeIn.delay(350).duration(500)} style={styles.actions}>
-        <Button title={t('home.playLocal')} onPress={() => navigation.navigate(Routes.Game)} />
+        <Button
+          title={t('home.playLocal')}
+          onPress={() => navigation.navigate(Routes.Game, { mode: 'local' })}
+        />
+        <Button
+          title={t('home.playCpu')}
+          variant="outline"
+          onPress={() => navigation.navigate(Routes.Game, { mode: 'cpu' })}
+        />
         <View style={styles.actionRow}>
           <Button
             title={t('home.skins')}

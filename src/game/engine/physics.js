@@ -4,6 +4,7 @@
  * clean stop) + exponential angular damping. All worklets.
  */
 import { len } from './vec2';
+import { PHYSICS } from './constants';
 
 export function speedOf(body) {
   'worklet';
@@ -35,6 +36,12 @@ export function integrateBody(body, dt, tuning) {
   body.angle += body.omega * dt;
   body.omega *= Math.pow(tuning.angularRetainPerSec, dt);
   if (Math.abs(body.omega) < 0.01) body.omega = 0;
+
+  // Visual-only "hit pop" decay — never read by any physics calculation.
+  if (body.hitFlash > 0) {
+    body.hitFlash *= Math.pow(PHYSICS.HIT_FLASH_DECAY, dt);
+    if (body.hitFlash < 0.02) body.hitFlash = 0;
+  }
 }
 
 /** True when the body has effectively stopped (or is dead). */

@@ -1,7 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ImageBackground, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ImageBackground, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useImage } from '@shopify/react-native-skia';
 import { useTranslation } from 'react-i18next';
 
@@ -10,7 +16,7 @@ import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { PaperCard } from '../../ui/PaperCard';
-import { Chalkboard, ChalkText } from '../../ui/Chalkboard';
+import { Emoji } from '../../ui/Emoji';
 import { spacing, radii } from '../../ui/theme/tokens';
 import { scale } from '../../lib/responsive';
 
@@ -25,11 +31,16 @@ import { haptics } from '../../lib/haptics';
 import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
 import { CLASSROOM_BG, DESK_SURFACE, PEN_IMAGES } from '../../assets/images';
 
-export function GameScreen({ navigation }) {
+const REACTIONS = ['😂', '😮', '🔥', '👏', '😎'];
+
+export function GameScreen({ navigation, route }) {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+
+  // 'cpu' = play vs the computer (seat B is the AI); otherwise pass-and-play.
+  const mode = route?.params?.mode === 'cpu' ? 'cpu' : 'local';
 
   const skinAId = useGameStore(s => s.skinA);
   const skinBId = useGameStore(s => s.skinB);
@@ -52,10 +63,9 @@ export function GameScreen({ navigation }) {
     (!PEN_IMAGES[skinAId] || penImgA) &&
     (!PEN_IMAGES[skinBId] || penImgB);
 
-  // The chalkboard scoreboard is measured so the desk always starts below it
-  // (rather than being covered by it). Seeded with a sensible estimate.
-  const [boardH, setBoardH] = useState(150);
-  const hudTop = spacing.sm + boardH + spacing.md;
+  // Board-less: the desk fills almost the whole screen; the small corner score
+  // badges just float on top.
+  const hudTop = 10;
 
   const table = useMemo(
     () => computeTableLayout(width, height, insets, hudTop),
@@ -80,18 +90,33 @@ export function GameScreen({ navigation }) {
 
   const lastHit = useRef(0);
 
+  // Screen shake on a hard hit — purely visual, scaled by impact strength.
+  const shakeX = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+
   const onLaunch = useCallback(power => {
     useGameStore.getState().setSimulating();
     SoundManager.play('flick', Math.max(0.4, power));
     haptics.medium();
   }, []);
 
-  const onHit = useCallback(() => {
+  const onHit = useCallback(strength => {
     const now = Date.now();
     if (now - lastHit.current < 120) return; // debounce repeated contact frames
     lastHit.current = now;
-    SoundManager.play('clack');
-    haptics.light();
+    SoundManager.play('clack', Math.max(0.35, strength));
+    if (strength > 0.7) haptics.heavy();
+    else if (strength > 0.32) haptics.medium();
+    else haptics.light();
+
+    const mag = 3 + strength * 11; // px
+    shakeX.value = withSequence(
+      withTiming(-mag, { duration: 28 }),
+      withTiming(mag, { duration: 42 }),
+      withTiming(-mag * 0.4, { duration: 42 }),
+      withTiming(0, { duration: 36 }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSettle = useCallback(() => {
@@ -126,61 +151,120 @@ export function GameScreen({ navigation }) {
     navigation.goBack();
   }, [navigation]);
 
+  // --- Computer opponent (seat B) ---
+  const doAiMove = useCallback(() => {
+    const w = world.value;
+    if (w.status !== WORLD_STATUS.AIMING || w.current !== 'b') return;
+    const a = w.a;
+    const b = w.b;
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    const d = Math.hypot(dx, dy) || 1;
+    dx /= d;
+    dy /= d;
+    // Aim error + variable power for a beatable, human-ish opponent.
+    const err = (Math.random() - 0.5) * 0.22;
+    const c = Math.cos(err);
+    const s = Math.sin(err);
+    const ax = dx * c - dy * s;
+    const ay = dx * s + dy * c;
+    const power = 0.6 + Math.random() * 0.3;
+    const speed = power * table.tuning.maxLaunchSpeed;
+    w.b.vx = ax * speed;
+    w.b.vy = ay * speed;
+    w.b.omega = 0;
+    w.status = WORLD_STATUS.SIMULATING;
+    w.settle = 0;
+    world.value = { ...w };
+    useGameStore.getState().setSimulating();
+    SoundManager.play('flick', power);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table]);
+
+  useEffect(() => {
+    if (mode !== 'cpu') return undefined;
+    if (status !== GAME_STATUS.AIMING || current !== 'b' || winner) return undefined;
+    const id = setTimeout(doAiMove, 900); // brief "thinking" pause
+    return () => clearTimeout(id);
+  }, [mode, status, current, winner, doAiMove]);
+
+  // Block human dragging while it's the computer's turn.
+  const aimEnabled = !(mode === 'cpu' && current === 'b');
+
+  const nameA = t('game.playerA');
+  const nameB = mode === 'cpu' ? t('game.cpu') : t('game.playerB');
+
+  // Emoji reactions for a bit of table-talk.
+  const [reaction, setReaction] = useState(null);
+  const onReact = useCallback(emoji => {
+    setReaction({ emoji, id: Date.now() });
+    haptics.selection();
+  }, []);
+
   const currentKey = status === GAME_STATUS.AIMING ? current : null;
-  const currentSkin = current === 'a' ? skinA : skinB;
-  const turnName = t(current === 'a' ? 'game.playerA' : 'game.playerB');
+  const turnName = current === 'a' ? nameA : nameB;
 
   return (
     <ImageBackground
       source={CLASSROOM_BG}
       resizeMode="cover"
       style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      {assetsReady ? (
-        <GameCanvas
-          world={world}
-          table={table}
-          skinA={skinA}
-          skinB={skinB}
-          theme={theme}
-          deskImg={deskImg}
-          penImgA={penImgA}
-          penImgB={penImgB}
-          currentKey={currentKey}
-          onLaunch={onLaunch}
-          onHit={onHit}
-          onSettle={onSettle}
-          onGameOver={onGameOver}
-        />
-      ) : (
-        <View style={styles.loading} />
-      )}
+      <Animated.View style={[styles.canvasWrap, shakeStyle]}>
+        {assetsReady ? (
+          <GameCanvas
+            world={world}
+            table={table}
+            skinA={skinA}
+            skinB={skinB}
+            theme={theme}
+            deskImg={deskImg}
+            penImgA={penImgA}
+            penImgB={penImgB}
+            currentKey={currentKey}
+            aimEnabled={aimEnabled}
+            onLaunch={onLaunch}
+            onHit={onHit}
+            onSettle={onSettle}
+            onGameOver={onGameOver}
+          />
+        ) : (
+          <View style={styles.loading} />
+        )}
+      </Animated.View>
 
-      {/* Chalkboard scoreboard (the class name-list) */}
-      <View
-        style={[styles.hud, { top: insets.top + spacing.sm, left: spacing.md, right: spacing.md }]}
-        onLayout={e => setBoardH(e.nativeEvent.layout.height)}>
-        <Chalkboard>
-          <ScoreLine
-            name={t('game.playerA')}
-            score={scores.a}
-            color={skinA.body}
-            chalk={theme.colors.chalkBlue}
-            active={status !== GAME_STATUS.GAMEOVER && current === 'a'}
-          />
-          <View style={styles.chalkRule} />
-          <ScoreLine
-            name={t('game.playerB')}
-            score={scores.b}
-            color={skinB.body}
-            chalk={theme.colors.chalkPink}
-            active={status !== GAME_STATUS.GAMEOVER && current === 'b'}
-          />
-        </Chalkboard>
+      {/* Corner score points */}
+      <CornerScore
+        side="left"
+        top={insets.top + 6}
+        name={nameA}
+        score={scores.a}
+        color={skinA.body}
+        active={status !== GAME_STATUS.GAMEOVER && current === 'a'}
+      />
+      <CornerScore
+        side="right"
+        top={insets.top + 6}
+        name={nameB}
+        score={scores.b}
+        color={skinB.body}
+        active={status !== GAME_STATUS.GAMEOVER && current === 'b'}
+      />
+
+      {/* Floating emoji reaction */}
+      <FloatingReaction data={reaction} />
+
+      {/* Reactions bar */}
+      <View style={[styles.reactions, { bottom: insets.bottom + spacing.sm }]}>
+        {REACTIONS.map(e => (
+          <Pressable key={e} onPress={() => onReact(e)} style={styles.reactBtn} hitSlop={6}>
+            <Emoji size={24}>{e}</Emoji>
+          </Pressable>
+        ))}
       </View>
 
-      {/* Turn / aim hint */}
+      {/* Turn / aim hint (sits above the reactions bar) */}
       {status === GAME_STATUS.AIMING && (
-        <View style={[styles.hint, { bottom: insets.bottom + spacing.md }]} pointerEvents="none">
+        <View style={[styles.hint, { bottom: insets.bottom + scale(56) }]} pointerEvents="none">
           <Text family="hand" variant="body" color={theme.colors.chalkSoft} style={styles.centerText}>
             {scores.a === 0 && scores.b === 0
               ? t('game.aimHint')
@@ -202,7 +286,7 @@ export function GameScreen({ navigation }) {
           </View>
           <View style={[styles.rule, { backgroundColor: theme.colors.ink }]} />
           <Text family="display" variant="heading" color={theme.colors.red} style={styles.centerText}>
-            {t('game.wins', { name: t(winner === 'a' ? 'game.playerA' : 'game.playerB') })}
+            {t('game.wins', { name: winner === 'a' ? nameA : nameB })}
           </Text>
           {streak > 0 && (
             <Text family="hand" variant="body" color={theme.colors.inkSoft} style={styles.centerText}>
@@ -219,53 +303,94 @@ export function GameScreen({ navigation }) {
   );
 }
 
-/** One chalk name-list line: name (in that player's chalk colour), tally, score. */
-function ScoreLine({ name, score, color, chalk, active }) {
-  const theme = useTheme();
-  const boxes = 5;
+/** Small floating score badge in a top corner. */
+function CornerScore({ side, top, name, score, color, active }) {
   return (
-    <View style={[styles.scoreLine, !active && styles.dimLine]}>
-      <View style={styles.nameCell}>
-        <ChalkText size="sm" color={chalk || theme.colors.chalk}>
-          {active ? '› ' : '  '}
+    <View
+      pointerEvents="none"
+      style={[
+        styles.corner,
+        { top },
+        side === 'left' ? { left: spacing.md } : { right: spacing.md },
+        active && styles.cornerActive,
+      ]}>
+      <View style={styles.cornerRow}>
+        <View style={[styles.cornerDot, { backgroundColor: color }]} />
+        <Text family="display" variant="caption" color="#FFFFFF" numberOfLines={1}>
           {name}
-        </ChalkText>
+        </Text>
       </View>
-      <View style={styles.tally}>
-        {Array.from({ length: boxes }).map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.tallyBox,
-              { borderColor: theme.colors.chalkSoft },
-              i < score && { backgroundColor: color, borderColor: color },
-            ]}
-          />
-        ))}
-      </View>
-      <ChalkText size="lg" style={styles.scoreNum}>
+      <Text family="display" variant="heading" color="#FFFFFF" style={styles.cornerScore}>
         {score}
-      </ChalkText>
+      </Text>
     </View>
+  );
+}
+
+/** A big emoji that floats up and fades when a reaction is sent. */
+function FloatingReaction({ data }) {
+  const y = useSharedValue(0);
+  const o = useSharedValue(0);
+  const s = useSharedValue(0.6);
+
+  useEffect(() => {
+    if (!data) return;
+    y.value = 0;
+    s.value = 0.6;
+    o.value = 1;
+    y.value = withTiming(-scale(180), { duration: 1200 });
+    s.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1.1, { duration: 250 }));
+    o.value = withDelay(650, withTiming(0, { duration: 550 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data && data.id]);
+
+  const st = useAnimatedStyle(() => ({
+    opacity: o.value,
+    transform: [{ translateY: y.value }, { scale: s.value }],
+  }));
+
+  if (!data) return null;
+  return (
+    <Animated.View style={[styles.floatReaction, st]} pointerEvents="none">
+      <Emoji size={72}>{data.emoji}</Emoji>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  canvasWrap: { flex: 1 },
   loading: { flex: 1 },
-  hud: { position: 'absolute' },
-  chalkRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: spacing.xs },
-  scoreLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  dimLine: { opacity: 0.6 },
-  nameCell: { flex: 1 },
-  tally: { flexDirection: 'row', gap: 4 },
-  tallyBox: {
-    width: scale(14),
-    height: scale(14),
-    borderWidth: 1.5,
-    borderRadius: 2,
+  corner: {
+    position: 'absolute',
+    backgroundColor: 'rgba(20,24,20,0.5)',
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    minWidth: scale(74),
   },
-  scoreNum: { minWidth: scale(26), textAlign: 'right' },
+  cornerActive: { borderColor: 'rgba(255,255,255,0.85)' },
+  cornerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  cornerDot: { width: scale(9), height: scale(9), borderRadius: 999 },
+  cornerScore: { lineHeight: scale(30) },
+  reactions: {
+    position: 'absolute',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(20,24,20,0.4)',
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  reactBtn: { paddingHorizontal: spacing.xs, paddingVertical: 2 },
+  floatReaction: {
+    position: 'absolute',
+    alignSelf: 'center',
+    bottom: '32%',
+  },
   hint: { position: 'absolute', left: spacing.xl, right: spacing.xl },
   centerText: { textAlign: 'center' },
   noteHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },

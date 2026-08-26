@@ -3,6 +3,7 @@
   "home": {
     "play": "Play",
     "playLocal": "Pass & Play",
+    "playCpu": "Play vs Computer",
     "skins": "Pens",
     "settings": "Settings",
     "leaderboard": "Ranking",
@@ -19,6 +20,7 @@
     "turn": "{{name}}'s turn",
     "playerA": "Player 1",
     "playerB": "Player 2",
+    "cpu": "Computer",
     "aimHint": "Drag your pen back, then release to flick",
     "wins": "{{name}} wins!",
     "rematch": "Rematch",
