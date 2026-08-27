@@ -21,6 +21,7 @@ export const StorageKeys = {
   haptics: 'settings.haptics', // haptic feedback on/off
   playerName: 'profile.name', // display name for the profile
   skippedUpdate: 'update.skipped', // version the user chose to skip
+  difficulty: 'ai.difficulty', // 'easy' | 'medium' | 'hard' for the computer opponent
 };
 
 export function getString(key, fallback) {

@@ -1,5 +1,8 @@
 {
-  "app": { "name": "Pen Fight", "tagline": "The unofficial sport of the last bench" },
+  "app": {
+    "name": "Pen Fight",
+    "tagline": "The unofficial sport of the last bench"
+  },
   "home": {
     "play": "Play",
     "playLocal": "Pass & Play",
@@ -38,7 +41,11 @@
     "on": "On",
     "off": "Off",
     "muted": "Muted",
-    "language": "Language"
+    "language": "Language",
+    "difficulty": "Computer Level",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard"
   },
   "streak": {
     "title": "Your Streak",

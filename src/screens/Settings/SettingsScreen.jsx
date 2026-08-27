@@ -53,6 +53,8 @@ export function SettingsScreen() {
   const muted = useGameStore(s => s.muted);
   const toggleMuted = useGameStore(s => s.toggleMuted);
   const hapticsOn = useGameStore(s => s.haptics);
+  const difficulty = useGameStore(s => s.difficulty);
+  const setDifficulty = useGameStore(s => s.setDifficulty);
   const toggleHaptics = useGameStore(s => s.toggleHaptics);
   const [lang, setLang] = useState(i18n.language);
 
@@ -101,6 +103,21 @@ export function SettingsScreen() {
           options={[
             { value: 'on', label: t('settings.on') },
             { value: 'off', label: t('settings.off') },
+          ]}
+        />
+      </Row>
+
+      <Row title={t('settings.difficulty')}>
+        <Segmented
+          value={difficulty}
+          onChange={id => {
+            setDifficulty(id);
+            haptics.selection();
+          }}
+          options={[
+            { value: 'easy', label: t('settings.easy') },
+            { value: 'medium', label: t('settings.medium') },
+            { value: 'hard', label: t('settings.hard') },
           ]}
         />
       </Row>

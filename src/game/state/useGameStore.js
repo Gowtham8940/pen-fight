@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { GAME_STATUS, other } from './gameMachine';
 import { storage, StorageKeys, getBool, getString, getJSON, setJSON } from '../../lib/storage';
 import { DEFAULT_SKIN_A, DEFAULT_SKIN_B } from '../../skins/registry';
+import { DEFAULT_DIFFICULTY } from '../ai/difficulty';
 
 export const useGameStore = create((set, get) => ({
   status: GAME_STATUS.IDLE,
@@ -27,6 +28,9 @@ export const useGameStore = create((set, get) => ({
 
   // Profile display name (persisted).
   playerName: getString(StorageKeys.playerName, 'Last Bench'),
+
+  // Computer-opponent difficulty (persisted).
+  difficulty: getString(StorageKeys.difficulty, DEFAULT_DIFFICULTY),
 
   // Cumulative wins per seat across all matches (persisted) — the leaderboard.
   records: getJSON(StorageKeys.records, { a: 0, b: 0 }),
@@ -84,6 +88,11 @@ export const useGameStore = create((set, get) => ({
     const next = !get().haptics;
     storage.set(StorageKeys.haptics, next);
     set({ haptics: next });
+  },
+
+  setDifficulty: id => {
+    storage.set(StorageKeys.difficulty, id);
+    set({ difficulty: id });
   },
 
   setPlayerName: name => {

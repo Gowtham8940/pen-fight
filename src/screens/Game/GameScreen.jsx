@@ -26,6 +26,7 @@ import { GAME_STATUS, other } from '../../game/state/gameMachine';
 import { WORLD_STATUS } from '../../game/engine/constants';
 import { useGameStore } from '../../game/state/useGameStore';
 import { getSkin } from '../../skins/registry';
+import { getDifficulty } from '../../game/ai/difficulty';
 import { SoundManager } from '../../audio/SoundManager';
 import { haptics } from '../../lib/haptics';
 import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
@@ -48,6 +49,7 @@ export function GameScreen({ navigation, route }) {
   const current = useGameStore(s => s.current);
   const winner = useGameStore(s => s.winner);
   const scores = useGameStore(s => s.scores);
+  const difficulty = useGameStore(s => s.difficulty);
   const streak = useStreakStore(activeStreak);
 
   const skinA = useMemo(() => getSkin(skinAId), [skinAId]);
@@ -155,20 +157,50 @@ export function GameScreen({ navigation, route }) {
   const doAiMove = useCallback(() => {
     const w = world.value;
     if (w.status !== WORLD_STATUS.AIMING || w.current !== 'b') return;
+    const cfg = getDifficulty(difficulty);
     const a = w.a;
     const b = w.b;
+
+    // Base aim: straight at the opponent's pen.
     let dx = a.x - b.x;
     let dy = a.y - b.y;
     const d = Math.hypot(dx, dy) || 1;
     dx /= d;
     dy /= d;
-    // Aim error + variable power for a beatable, human-ish opponent.
-    const err = (Math.random() - 0.5) * 0.22;
+
+    // HARD only: instead of hitting the opponent dead-on, aim through them
+    // toward whichever table edge they're closest to, so the hit shoves them
+    // out rather than just knocking them around the middle.
+    if (cfg.edgeAware) {
+      const distLeft = a.x - table.x;
+      const distRight = table.x + table.w - a.x;
+      const distTop = a.y - table.y;
+      const distBottom = table.y + table.h - a.y;
+      const min = Math.min(distLeft, distRight, distTop, distBottom);
+      let ex = 0;
+      let ey = 0;
+      if (min === distLeft) ex = -1;
+      else if (min === distRight) ex = 1;
+      else if (min === distTop) ey = -1;
+      else ey = 1;
+      // Blend the "push toward that edge" direction into the aim.
+      const BLEND = 0.45;
+      dx += ex * BLEND;
+      dy += ey * BLEND;
+      const bl = Math.hypot(dx, dy) || 1;
+      dx /= bl;
+      dy /= bl;
+    }
+
+    // Difficulty-scaled aim error: rotate the aim by a random angle.
+    const err = (Math.random() - 0.5) * cfg.aimError;
     const c = Math.cos(err);
-    const s = Math.sin(err);
-    const ax = dx * c - dy * s;
-    const ay = dx * s + dy * c;
-    const power = 0.6 + Math.random() * 0.3;
+    const sn = Math.sin(err);
+    const ax = dx * c - dy * sn;
+    const ay = dx * sn + dy * c;
+
+    // Difficulty-scaled power.
+    const power = cfg.minPower + Math.random() * (cfg.maxPower - cfg.minPower);
     const speed = power * table.tuning.maxLaunchSpeed;
     w.b.vx = ax * speed;
     w.b.vy = ay * speed;
@@ -179,14 +211,14 @@ export function GameScreen({ navigation, route }) {
     useGameStore.getState().setSimulating();
     SoundManager.play('flick', power);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table]);
+  }, [table, difficulty]);
 
   useEffect(() => {
     if (mode !== 'cpu') return undefined;
     if (status !== GAME_STATUS.AIMING || current !== 'b' || winner) return undefined;
-    const id = setTimeout(doAiMove, 900); // brief "thinking" pause
+    const id = setTimeout(doAiMove, getDifficulty(difficulty).thinkMs);
     return () => clearTimeout(id);
-  }, [mode, status, current, winner, doAiMove]);
+  }, [mode, status, current, winner, doAiMove, difficulty]);
 
   // Block human dragging while it's the computer's turn.
   const aimEnabled = !(mode === 'cpu' && current === 'b');
