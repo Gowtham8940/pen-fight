@@ -32,6 +32,9 @@ export const useGameStore = create((set, get) => ({
   // Computer-opponent difficulty (persisted).
   difficulty: getString(StorageKeys.difficulty, DEFAULT_DIFFICULTY),
 
+  // First time the player opens a CPU match we ask them to pick a level.
+  difficultyPrompted: getBool(StorageKeys.difficultyPrompted, false),
+
   // Cumulative wins per seat across all matches (persisted) — the leaderboard.
   records: getJSON(StorageKeys.records, { a: 0, b: 0 }),
 
@@ -93,6 +96,11 @@ export const useGameStore = create((set, get) => ({
   setDifficulty: id => {
     storage.set(StorageKeys.difficulty, id);
     set({ difficulty: id });
+  },
+
+  markDifficultyPrompted: () => {
+    storage.set(StorageKeys.difficultyPrompted, true);
+    set({ difficultyPrompted: true });
   },
 
   setPlayerName: name => {

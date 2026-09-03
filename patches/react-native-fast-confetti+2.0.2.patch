@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-fast-confetti/lib/module/hooks/useAnimationLifecycle.js b/node_modules/react-native-fast-confetti/lib/module/hooks/useAnimationLifecycle.js
+index aa0920f..7105e69 100644
+--- a/node_modules/react-native-fast-confetti/lib/module/hooks/useAnimationLifecycle.js
++++ b/node_modules/react-native-fast-confetti/lib/module/hooks/useAnimationLifecycle.js
+@@ -32,7 +32,7 @@ export const useAnimationLifecycle = ({
+   const opacity = useDerivedValue(() => {
+     if (!fadeOutOnEnd) return 1;
+     return interpolate(progress.get(), fadeRange, [1, 0], Extrapolation.CLAMP);
+-  }, [fadeOutOnEnd, fadeRange]);
++  });
+   const pause = useCallback(() => {
+     'worklet';
+ 

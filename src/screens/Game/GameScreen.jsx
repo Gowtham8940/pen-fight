@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ImageBackground, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { useImage } from '@shopify/react-native-skia';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '../../ui/theme/useTheme';
@@ -17,6 +17,11 @@ import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { PaperCard } from '../../ui/PaperCard';
 import { Emoji } from '../../ui/Emoji';
+import { LevelUpToast } from '../../ui/LevelUpToast';
+import { PIConfetti } from 'react-native-fast-confetti';
+
+// School-theme confetti: blue ink, red pen, chalk, gold star.
+const CONFETTI_COLORS = ['#2B3F80', '#C6382C', '#F4ECD8', '#E8B23A', '#4E8C6A'];
 import { spacing, radii } from '../../ui/theme/tokens';
 import { scale } from '../../lib/responsive';
 
@@ -25,12 +30,15 @@ import { computeTableLayout, createWorld } from '../../game/config/tableLayout';
 import { GAME_STATUS, other } from '../../game/state/gameMachine';
 import { WORLD_STATUS } from '../../game/engine/constants';
 import { useGameStore } from '../../game/state/useGameStore';
-import { getSkin } from '../../skins/registry';
+import { getSkin, isSkinOwned, DEFAULT_SKIN_A } from '../../skins/registry';
+import { Routes } from '../../app/navigation/routes';
 import { getDifficulty } from '../../game/ai/difficulty';
+import { getLevelInfo } from '../../game/progression/levels';
 import { SoundManager } from '../../audio/SoundManager';
 import { haptics } from '../../lib/haptics';
 import { useStreakStore, activeStreak } from '../../features/streaks/useStreakStore';
 import { CLASSROOM_BG, DESK_SURFACE, PEN_IMAGES } from '../../assets/images';
+import { useSkImage } from '../../assets/skiaImages';
 
 const REACTIONS = ['😂', '😮', '🔥', '👏', '😎'];
 
@@ -50,20 +58,48 @@ export function GameScreen({ navigation, route }) {
   const winner = useGameStore(s => s.winner);
   const scores = useGameStore(s => s.scores);
   const difficulty = useGameStore(s => s.difficulty);
+  const setDifficulty = useGameStore(s => s.setDifficulty);
+  const difficultyPrompted = useGameStore(s => s.difficultyPrompted);
+  const markDifficultyPrompted = useGameStore(s => s.markDifficultyPrompted);
   const streak = useStreakStore(activeStreak);
+  const totalGames = useStreakStore(s => s.totalGames);
 
-  const skinA = useMemo(() => getSkin(skinAId), [skinAId]);
-  const skinB = useMemo(() => getSkin(skinBId), [skinBId]);
+  // Guard against a previously-selected skin that's since become locked
+  // (e.g. the level-unlock system shipped after the player already picked
+  // one) — fall back to the always-owned default rather than soft-locking them.
+  const skinA = useMemo(() => {
+    const s = getSkin(skinAId);
+    return isSkinOwned(s, [], totalGames) ? s : getSkin(DEFAULT_SKIN_A);
+  }, [skinAId, totalGames]);
+  const skinB = useMemo(() => {
+    const s = getSkin(skinBId);
+    return isSkinOwned(s, [], totalGames) ? s : getSkin(DEFAULT_SKIN_A);
+  }, [skinBId, totalGames]);
 
-  // Preload the Skia images here and gate the canvas on them, so the desk/pens
-  // never flash their hand-drawn fallback while the real sprites decode.
-  const deskImg = useImage(DESK_SURFACE || null);
-  const penImgA = useImage(PEN_IMAGES[skinAId] || null);
-  const penImgB = useImage(PEN_IMAGES[skinBId] || null);
+  // Read the decoded sprites from the process-wide cache (warmed at app start
+  // in App.jsx). Cached ones are there on the first render, so the desk no
+  // longer appears a second after the screen does.
+  const deskImg = useSkImage(DESK_SURFACE || null);
+  const penImgA = useSkImage(PEN_IMAGES[skinAId] || null);
+  const penImgB = useSkImage(PEN_IMAGES[skinBId] || null);
   const assetsReady =
     (!DESK_SURFACE || deskImg) &&
     (!PEN_IMAGES[skinAId] || penImgA) &&
     (!PEN_IMAGES[skinBId] || penImgB);
+
+  // The desk sprite takes a beat to decode. Rather than popping in, it eases
+  // up to full size and opacity the moment it's ready.
+  const boardIn = useSharedValue(0);
+  useEffect(() => {
+    if (assetsReady) {
+      boardIn.value = withTiming(1, { duration: 380, easing: Easing.out(Easing.cubic) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetsReady]);
+  const boardStyle = useAnimatedStyle(() => ({
+    opacity: boardIn.value,
+    transform: [{ scale: 0.94 + boardIn.value * 0.06 }],
+  }));
 
   // Board-less: the desk fills almost the whole screen; the small corner score
   // badges just float on top.
@@ -82,6 +118,11 @@ export function GameScreen({ navigation, route }) {
     useGameStore.getState().startMatch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table.w, table.h, skinAId, skinBId]);
+
+  // A fresh sitting starts 0-0; REMATCH keeps the running tally.
+  useEffect(() => {
+    useGameStore.getState().resetScores();
+  }, []);
 
   // Audio lifecycle.
   useEffect(() => {
@@ -134,13 +175,40 @@ export function GameScreen({ navigation, route }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onGameOver = useCallback(win => {
-    useGameStore.getState().endGame(win);
-    useStreakStore.getState().recordPlay(); // count this completed match toward the daily streak
-    SoundManager.play('penoff');
-    setTimeout(() => SoundManager.play('win'), 350);
-    haptics.success();
-  }, []);
+  const onGameOver = useCallback(
+    win => {
+      // Rank is derived from games played, so compare the level either side of
+      // recording this match to catch the moment it ticks over.
+      const before = getLevelInfo(useStreakStore.getState().totalGames).current.level;
+      useGameStore.getState().endGame(win);
+      useStreakStore.getState().recordPlay(); // counts toward the daily streak
+      const after = getLevelInfo(useStreakStore.getState().totalGames).current;
+
+      SoundManager.play('penoff');
+      setTimeout(() => SoundManager.play('win'), 350);
+      haptics.success();
+
+      if (after.level > before) {
+        setLevelUp({
+          level: after.level,
+          nameKey: after.nameKey,
+          emoji: after.emoji,
+          skinName: t(`skinNames.${after.unlockSkin}`),
+        });
+      }
+
+      // In CPU mode seat A is the human, so only their loss gets a pep talk.
+      const humanLost = mode === 'cpu' && win === 'b';
+      if (humanLost) {
+        const pool = t('game.loseMessages', { returnObjects: true });
+        const list = Array.isArray(pool) ? pool : [];
+        setLoseMsg(list.length ? list[Math.floor(Math.random() * list.length)] : '');
+      } else {
+        setLoseMsg('');
+      }
+    },
+    [t, mode],
+  );
 
   const onRematch = useCallback(() => {
     world.value = createWorld(table, skinA, skinB);
@@ -148,10 +216,34 @@ export function GameScreen({ navigation, route }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table, skinA, skinB]);
 
-  const onHome = useCallback(() => {
+  // Android's edge-swipe back fires easily during a flick, which used to drop
+  // the player straight onto Home mid-match. Intercept the pop and confirm.
+  const allowExit = useRef(false);
+  const [confirmExit, setConfirmExit] = useState(false);
+
+  const leaveNow = useCallback(() => {
+    allowExit.current = true;
+    setConfirmExit(false);
     useGameStore.getState().goHome();
     navigation.goBack();
   }, [navigation]);
+
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', e => {
+        // A finished match (or an intentional Home tap) may leave freely.
+        if (allowExit.current || useGameStore.getState().status === GAME_STATUS.GAMEOVER) {
+          return;
+        }
+        e.preventDefault();
+        setConfirmExit(true);
+      }),
+    [navigation],
+  );
+
+  const onHome = useCallback(() => {
+    leaveNow();
+  }, [leaveNow]);
 
   // --- Computer opponent (seat B) ---
   const doAiMove = useCallback(() => {
@@ -214,11 +306,11 @@ export function GameScreen({ navigation, route }) {
   }, [table, difficulty]);
 
   useEffect(() => {
-    if (mode !== 'cpu') return undefined;
+    if (mode !== 'cpu' || showLevelPick) return undefined;
     if (status !== GAME_STATUS.AIMING || current !== 'b' || winner) return undefined;
     const id = setTimeout(doAiMove, getDifficulty(difficulty).thinkMs);
     return () => clearTimeout(id);
-  }, [mode, status, current, winner, doAiMove, difficulty]);
+  }, [mode, status, current, winner, doAiMove, difficulty, showLevelPick]);
 
   // Block human dragging while it's the computer's turn.
   const aimEnabled = !(mode === 'cpu' && current === 'b');
@@ -228,10 +320,26 @@ export function GameScreen({ navigation, route }) {
 
   // Emoji reactions for a bit of table-talk.
   const [reaction, setReaction] = useState(null);
+  const [levelUp, setLevelUp] = useState(null);
+  // Picked once per finished match so it doesn't reshuffle on every re-render.
+  const [loseMsg, setLoseMsg] = useState('');
   const onReact = useCallback(emoji => {
     setReaction({ emoji, id: Date.now() });
     haptics.selection();
   }, []);
+
+  // First time the player opens a CPU match, ask them to pick a level. The
+  // AI is paused behind this so it can't shoot before they've chosen.
+  const [showLevelPick, setShowLevelPick] = useState(mode === 'cpu' && !difficultyPrompted);
+  const onPickLevel = useCallback(
+    id => {
+      setDifficulty(id);
+      markDifficultyPrompted();
+      setShowLevelPick(false);
+      haptics.selection();
+    },
+    [setDifficulty, markDifficultyPrompted],
+  );
 
   const currentKey = status === GAME_STATUS.AIMING ? current : null;
   const turnName = current === 'a' ? nameA : nameB;
@@ -243,25 +351,25 @@ export function GameScreen({ navigation, route }) {
       style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <Animated.View style={[styles.canvasWrap, shakeStyle]}>
         {assetsReady ? (
-          <GameCanvas
-            world={world}
-            table={table}
-            skinA={skinA}
-            skinB={skinB}
-            theme={theme}
-            deskImg={deskImg}
-            penImgA={penImgA}
-            penImgB={penImgB}
-            currentKey={currentKey}
-            aimEnabled={aimEnabled}
-            onLaunch={onLaunch}
-            onHit={onHit}
-            onSettle={onSettle}
-            onGameOver={onGameOver}
-          />
-        ) : (
-          <View style={styles.loading} />
-        )}
+          <Animated.View style={[styles.canvasWrap, boardStyle]}>
+            <GameCanvas
+              world={world}
+              table={table}
+              skinA={skinA}
+              skinB={skinB}
+              theme={theme}
+              deskImg={deskImg}
+              penImgA={penImgA}
+              penImgB={penImgB}
+              currentKey={currentKey}
+              aimEnabled={aimEnabled}
+              onLaunch={onLaunch}
+              onHit={onHit}
+              onSettle={onSettle}
+              onGameOver={onGameOver}
+            />
+          </Animated.View>
+        ) : null}
       </Animated.View>
 
       {/* Corner score points */}
@@ -281,6 +389,16 @@ export function GameScreen({ navigation, route }) {
         color={skinB.body}
         active={status !== GAME_STATUS.GAMEOVER && current === 'b'}
       />
+
+      {/* Settings shortcut — change the computer level mid-match */}
+      <Pressable
+        onPress={() => navigation.navigate(Routes.Settings)}
+        hitSlop={10}
+        style={[styles.gearBtn, { top: insets.top + 6 }]}>
+        <Emoji size={18}>⚙️</Emoji>
+      </Pressable>
+
+      {/* Rank-up notifier */}
 
       {/* Floating emoji reaction */}
       <FloatingReaction data={reaction} />
@@ -305,8 +423,60 @@ export function GameScreen({ navigation, route }) {
         </View>
       )}
 
-      {/* Win note (torn paper) */}
-      <Modal visible={status === GAME_STATUS.GAMEOVER} bare>
+      {/* First-run: pick the computer level */}
+      <Modal visible={showLevelPick} bare>
+        <PaperCard>
+          <View style={styles.noteHead}>
+            <Text family="display" variant="subheading" color={theme.colors.ink}>
+              {t('game.pickLevelTitle')}
+            </Text>
+          </View>
+          <View style={[styles.rule, { backgroundColor: theme.colors.ink }]} />
+          <Text family="hand" variant="body" color={theme.colors.inkSoft} style={styles.centerText}>
+            {t('game.pickLevelHint')}
+          </Text>
+          <View style={styles.noteActions}>
+            {['easy', 'medium', 'hard'].map(id => (
+              <Button
+                key={id}
+                title={t(`settings.${id}`)}
+                variant={id === 'medium' ? 'primary' : 'outline'}
+                onPress={() => onPickLevel(id)}
+              />
+            ))}
+          </View>
+        </PaperCard>
+      </Modal>
+
+      {/* Win note (torn paper); confetti bursts behind it on a win */}
+      <Modal
+        visible={status === GAME_STATUS.GAMEOVER}
+        bare
+        overlay={
+          status === GAME_STATUS.GAMEOVER && !loseMsg ? (
+            <PIConfetti
+              autoplay
+              fadeOutOnEnd
+              sprayDuration={500}
+              gravity={1.5}
+              drag={1.6}
+              colors={CONFETTI_COLORS}>
+              <PIConfetti.Origin
+                blastPosition="bottom-left"
+                count={80}
+                initialSpeed={2.6}
+                speedVariation={{ min: 0.5, max: 1 }}
+              />
+              <PIConfetti.Origin
+                blastPosition="bottom-right"
+                count={80}
+                initialSpeed={2.6}
+                speedVariation={{ min: 0.5, max: 1 }}
+                delay={120}
+              />
+            </PIConfetti>
+          ) : null
+        }>
         <PaperCard>
           <View style={styles.noteHead}>
             <Text family="display" variant="subheading" color={theme.colors.ink}>
@@ -320,10 +490,16 @@ export function GameScreen({ navigation, route }) {
           <Text family="display" variant="heading" color={theme.colors.red} style={styles.centerText}>
             {t('game.wins', { name: winner === 'a' ? nameA : nameB })}
           </Text>
-          {streak > 0 && (
+          {loseMsg ? (
             <Text family="hand" variant="body" color={theme.colors.inkSoft} style={styles.centerText}>
-              🔥 {t('streak.celebrate', { count: streak })}
+              {loseMsg}
             </Text>
+          ) : (
+            streak > 0 && (
+              <Text family="hand" variant="body" color={theme.colors.inkSoft} style={styles.centerText}>
+                🔥 {t('streak.celebrate', { count: streak })}
+              </Text>
+            )
           )}
           <View style={styles.noteActions}>
             <Button title={t('game.rematch')} onPress={onRematch} />
@@ -331,6 +507,26 @@ export function GameScreen({ navigation, route }) {
           </View>
         </PaperCard>
       </Modal>
+
+      {/* Guard against an accidental edge-swipe leaving the match */}
+      <Modal visible={confirmExit} bare onRequestClose={() => setConfirmExit(false)}>
+        <PaperCard>
+          <Text family="display" variant="subheading" color={theme.colors.ink}>
+            {t('game.leaveTitle')}
+          </Text>
+          <View style={[styles.rule, { backgroundColor: theme.colors.ink }]} />
+          <Text family="hand" variant="body" color={theme.colors.inkSoft} style={styles.centerText}>
+            {t('game.leaveHint')}
+          </Text>
+          <View style={styles.noteActions}>
+            <Button title={t('game.keepPlaying')} onPress={() => setConfirmExit(false)} />
+            <Button title={t('game.leave')} variant="link" onPress={leaveNow} />
+          </View>
+        </PaperCard>
+      </Modal>
+
+      {/* Rank-up notifier — own window so it sits above the note */}
+      <LevelUpToast data={levelUp} onDone={() => setLevelUp(null)} />
     </ImageBackground>
   );
 }
@@ -392,7 +588,6 @@ function FloatingReaction({ data }) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   canvasWrap: { flex: 1 },
-  loading: { flex: 1 },
   corner: {
     position: 'absolute',
     backgroundColor: 'rgba(20,24,20,0.5)',
@@ -404,6 +599,17 @@ const styles = StyleSheet.create({
     minWidth: scale(74),
   },
   cornerActive: { borderColor: 'rgba(255,255,255,0.85)' },
+  gearBtn: {
+    position: 'absolute',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(20,24,20,0.5)',
+    width: scale(36),
+    height: scale(36),
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+  },
   cornerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   cornerDot: { width: scale(9), height: scale(9), borderRadius: 999 },
   cornerScore: { lineHeight: scale(30) },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Linking, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import { UpdatePrompt } from '../ui/UpdatePrompt';
 import { MaintenanceScreen } from '../screens/Maintenance/MaintenanceScreen';
 import { APP_STATUS } from '../config/appStatus';
 import { storage, StorageKeys, getString } from '../lib/storage';
+import { preloadGameImages } from '../assets/skiaImages';
 
 function buildNavTheme(theme) {
   const base = theme.mode === 'dark' ? DarkTheme : DefaultTheme;
@@ -49,6 +50,13 @@ function AppInner() {
  *  + i18n providers so those screens are themed and translated. */
 function AppGate() {
   const [splashDone, setSplashDone] = useState(false);
+
+  // Decode the desk + pen sprites while the splash is still up, so the board
+  // is ready the instant the player opens a match.
+  useEffect(() => {
+    preloadGameImages();
+  }, []);
+
   const [maintenance, setMaintenance] = useState(APP_STATUS.maintenance);
   const [showUpdate, setShowUpdate] = useState(() => {
     const u = APP_STATUS.update;

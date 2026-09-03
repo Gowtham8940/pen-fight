@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../ui/theme/useTheme';
 import { useThemeContext } from '../../app/providers/ThemeProvider';
 import { Text } from '../../ui/Text';
+import { ScreenHeader } from '../../ui/ScreenHeader';
 import { spacing, radii } from '../../ui/theme/tokens';
 import { useGameStore } from '../../game/state/useGameStore';
 import { SoundManager } from '../../audio/SoundManager';
@@ -80,9 +81,7 @@ export function SettingsScreen() {
     <ScrollView
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={styles.content}>
-      <Text variant="heading" color={theme.colors.chalk}>
-        {t('settings.title')}
-      </Text>
+      <ScreenHeader title={t('settings.title')} />
 
       <Row title={t('settings.theme')}>
         <Segmented
@@ -148,7 +147,7 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.lg, gap: spacing.md },
+  content: { padding: spacing.lg, paddingTop: 0, gap: spacing.md },
   row: {
     borderRadius: radii.md,
     padding: spacing.md,

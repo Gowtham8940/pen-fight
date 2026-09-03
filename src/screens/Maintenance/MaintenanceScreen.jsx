@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../ui/theme/useTheme';
@@ -17,7 +17,9 @@ export function MaintenanceScreen({ onRetry }) {
   const { t } = useTranslation();
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.fill, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <SafeAreaView style={styles.root}>
       <Chalkboard style={styles.board}>
         <View style={styles.emoji}>
           <Emoji size={56}>🛠️</Emoji>
@@ -41,10 +43,12 @@ export function MaintenanceScreen({ onRetry }) {
         </Text>
       )}
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1, zIndex: 9999 },
   root: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.lg },
   board: { alignSelf: 'stretch', gap: spacing.sm, paddingVertical: spacing.lg },
   emoji: { alignItems: 'center', marginBottom: spacing.xs },

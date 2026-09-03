@@ -18,7 +18,7 @@ export function UpdatePrompt({ visible, required, onUpdate, onSkip }) {
   const { t } = useTranslation();
 
   return (
-    <Modal visible={visible} bare>
+    <Modal visible={visible} bare blocking>
       <PaperCard>
         <View style={styles.head}>
           <Emoji size={28}>🚀</Emoji>

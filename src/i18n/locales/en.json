@@ -6,7 +6,7 @@
   "home": {
     "play": "Play",
     "playLocal": "Pass & Play",
-    "playCpu": "Play vs Computer",
+    "playCpu": "Battle the Bot",
     "skins": "Pens",
     "settings": "Settings",
     "leaderboard": "Ranking",
@@ -17,7 +17,8 @@
     "player": "Last Bench",
     "statStreak": "Streak",
     "statBest": "Best",
-    "statGames": "Games"
+    "statGames": "Games",
+    "career": "Career"
   },
   "game": {
     "turn": "{{name}}'s turn",
@@ -28,7 +29,25 @@
     "wins": "{{name}} wins!",
     "rematch": "Rematch",
     "home": "Home",
-    "score": "Score"
+    "score": "Score",
+    "pickLevelTitle": "Pick your opponent",
+    "pickLevelHint": "How tough should the computer be? You can change this later in Settings.",
+    "loseMessages": [
+      "Even the best pens run out of ink. Reload and go again.",
+      "That desk has seen tougher losses. Rematch?",
+      "Champions are just kids who kept flicking.",
+      "You lost the pen, not the war.",
+      "Every legend of the last bench started 0–1.",
+      "Close one. The comeback is the best part of the story.",
+      "Your pen's still on the desk. So are you. Go again.",
+      "Losing teaches the angle. Winning just feels nice.",
+      "The bell hasn't rung yet — one more round.",
+      "Shake it off. Next flick's the one."
+    ],
+    "leaveTitle": "Leave the match?",
+    "leaveHint": "Your pens are still on the desk. Quit now and this round is lost.",
+    "keepPlaying": "Keep Playing",
+    "leave": "Leave Match"
   },
   "settings": {
     "title": "Settings",
@@ -65,7 +84,19 @@
     "player1": "Player 1 pen",
     "player2": "Player 2 pen",
     "locked": "Locked",
-    "selected": "Selected"
+    "selected": "Selected",
+    "rankTitle": "Class Rank",
+    "levelShort": "Lv.{{level}}",
+    "gamesToNext": "{{count}} more games → {{name}}",
+    "unlocksAtLevel": "🔒 Lv.{{level}}",
+    "levelNames": {
+      "newKid": "New Kid",
+      "benchwarmer": "Benchwarmer",
+      "regular": "Regular",
+      "veteran": "Veteran",
+      "legend": "Legend"
+    },
+    "lockedAt": "Lv.{{level}}"
   },
   "skinNames": {
     "classic": "Pilot Blue",
@@ -104,5 +135,24 @@
     "title": "Back soon",
     "message": "Pen Fight is under maintenance. We're tidying the last bench — please check back in a little while.",
     "retry": "Try again"
+  },
+  "career": {
+    "title": "Your Career",
+    "levelShort": "Lv.{{level}}",
+    "toNext": "{{count}} more games → {{name}}",
+    "maxed": "Top rank reached — legend of the last bench!",
+    "pathTitle": "Rank Path",
+    "streakTitle": "Daily Streak",
+    "recordsTitle": "Head to Head",
+    "games": "Games",
+    "wins": "Wins",
+    "best": "Best",
+    "save": "Save",
+    "noRecords": "No matches yet — play one to start your record.",
+    "reset": "Reset record"
+  },
+  "levelUp": {
+    "title": "Rank up!",
+    "unlocked": "Unlocked {{name}}"
   }
 }

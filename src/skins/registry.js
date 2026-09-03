@@ -6,11 +6,15 @@
  *
  * `unlock`:
  *   'default'        -> always owned
+ *   'level'           -> gated by the Class Rank tree in game/progression/levels.js
+ *                        (that file is the single source of truth for the
+ *                        games-played threshold — look up levelForSkin(id) there)
  *   { price: <INR> } -> hook for the LATER donations/shop phase (unused now)
  *
  * Geometry is expressed in "table units" (a fraction is applied at runtime
  * against the computed table size) so pens scale across phones and tablets.
  */
+import { isSkinUnlockedForGames } from '../game/progression/levels';
 
 /**
  * @typedef {Object} PenSkin
@@ -59,7 +63,7 @@ export const SKINS = [
     grip: '#A9241F',
     trim: '#E6C24A',
     tip: '#2A2A2A',
-    unlock: 'default',
+    unlock: 'level',
   },
   {
     // Reynolds 045 — cream ballpoint with blue cap (schoolbag classic)
@@ -73,7 +77,7 @@ export const SKINS = [
     grip: '#E3D9BF',
     trim: '#B9BEC8',
     tip: '#2A2A2A',
-    unlock: 'default',
+    unlock: 'level',
   },
   {
     // Green sketch/marker — fat + light, skids further
@@ -87,7 +91,7 @@ export const SKINS = [
     grip: '#178A5E',
     trim: '#0E4A32',
     tip: '#0B3A28',
-    unlock: 'default',
+    unlock: 'level',
   },
   {
     // Golden Ink — premium metallic, heavy hitter
@@ -101,7 +105,7 @@ export const SKINS = [
     grip: '#B98C13',
     trim: '#F2E3A0',
     tip: '#5A430B',
-    unlock: 'default',
+    unlock: 'level',
   },
 ];
 
@@ -114,10 +118,21 @@ export function getSkin(id) {
   return byId[id] || SKINS[0];
 }
 
+// Only 'classic' is unlocked on a fresh install — both seats must start on an
+// owned skin, so both default to it (players still tell them apart by the
+// blue/pink name chalk + the active-pen cap glow).
 export const DEFAULT_SKIN_A = 'classic';
-export const DEFAULT_SKIN_B = 'ruby';
+export const DEFAULT_SKIN_B = 'classic';
 
-export function isSkinOwned(skin, ownedIds) {
+/**
+ * `totalGames` (from useStreakStore) drives 'level' unlocks; `ownedIds` is
+ * kept for the later donations/shop path ({price} unlocks).
+ */
+export function isSkinOwned(skin, ownedIds, totalGames = 0) {
   if (skin.unlock === 'default') return true;
-  return ownedIds.includes(skin.id);
+  if (skin.unlock === 'level') return isSkinUnlockedForGames(skin.id, totalGames);
+  if (skin.unlock && typeof skin.unlock === 'object' && 'price' in skin.unlock) {
+    return ownedIds.includes(skin.id);
+  }
+  return false;
 }

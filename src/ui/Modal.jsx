@@ -8,18 +8,31 @@ import { scale } from '../lib/responsive';
  * Centered themed modal card.
  * Props: visible, onRequestClose, dismissable (tap backdrop to close), children.
  */
-export function Modal({ visible, onRequestClose, dismissable = false, bare = false, children }) {
+export function Modal({
+  visible,
+  onRequestClose,
+  dismissable = false,
+  bare = false,
+  blocking = false, // true = Android BACK cannot dismiss (update/maintenance gates)
+  overlay = null, // full-bleed layer drawn behind the card (confetti, etc.)
+  children,
+}) {
   const theme = useTheme();
   return (
     <RNModal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onRequestClose}
+      onRequestClose={blocking ? () => {} : onRequestClose}
       statusBarTranslucent>
       <Pressable
         style={styles.backdrop}
         onPress={dismissable ? onRequestClose : undefined}>
+        {overlay ? (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            {overlay}
+          </View>
+        ) : null}
         {bare ? (
           <View style={{ width: '100%', maxWidth: scale(360) }}>{children}</View>
         ) : (

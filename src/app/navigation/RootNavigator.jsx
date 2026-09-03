@@ -5,9 +5,7 @@ import { HomeScreen } from '../../screens/Home/HomeScreen';
 import { GameScreen } from '../../screens/Game/GameScreen';
 import { SettingsScreen } from '../../screens/Settings/SettingsScreen';
 import { SkinSelectScreen } from '../../screens/SkinSelect/SkinSelectScreen';
-import { StreakScreen } from '../../features/streaks/StreakScreen';
-import { LeaderboardScreen } from '../../screens/Leaderboard/LeaderboardScreen';
-import { ProfileScreen } from '../../screens/Profile/ProfileScreen';
+import { CareerScreen } from '../../screens/Career/CareerScreen';
 import { useTheme } from '../../ui/theme/useTheme';
 
 const Stack = createNativeStackNavigator();
@@ -17,22 +15,16 @@ export function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTitleStyle: { color: theme.colors.text },
-        headerTintColor: theme.colors.brand,
+        // Every screen draws its own compact header (ui/ScreenHeader) inside
+        // its scroll content, so nothing can slide under the back control.
+        headerShown: false,
         contentStyle: { backgroundColor: theme.colors.background },
       }}>
-      <Stack.Screen name={Routes.Home} component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen
-        name={Routes.Game}
-        component={GameScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen name={Routes.Settings} component={SettingsScreen} options={{ title: '' }} />
-      <Stack.Screen name={Routes.SkinSelect} component={SkinSelectScreen} options={{ title: '' }} />
-      <Stack.Screen name={Routes.Streak} component={StreakScreen} options={{ title: '' }} />
-      <Stack.Screen name={Routes.Leaderboard} component={LeaderboardScreen} options={{ title: '' }} />
-      <Stack.Screen name={Routes.Profile} component={ProfileScreen} options={{ title: '' }} />
+      <Stack.Screen name={Routes.Home} component={HomeScreen} />
+      <Stack.Screen name={Routes.Game} component={GameScreen} />
+      <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
+      <Stack.Screen name={Routes.SkinSelect} component={SkinSelectScreen} />
+      <Stack.Screen name={Routes.Career} component={CareerScreen} />
     </Stack.Navigator>
   );
 }
