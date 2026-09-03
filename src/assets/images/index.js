@@ -12,13 +12,13 @@
  */
 
 // Full-screen classroom backdrop (currently a placeholder — replace the PNG).
-export const CLASSROOM_BG = require('./classroom_bg.png');
+export const CLASSROOM_BG = require('./classroom_bg.jpg');
 
 // App icon artwork (mascot pens + spark) — used on the splash screen.
-export const APP_ICON = require('./app_icon.png');
+export const APP_ICON = require('./app_icon.jpg');
 
 // Top-down play-desk surface.
-export const DESK_SURFACE = require('./desk_surface.png');
+export const DESK_SURFACE = require('./desk_surface.jpg');
 
 // Realistic pen sprites, keyed by skin id (magenta keyed out + auto-cropped).
 export const PEN_IMAGES = {

@@ -8,7 +8,7 @@ time.
 
 ---
 
-## 1. `classroom_bg.png` — full classroom backdrop  *(wired; replace the placeholder)*
+## 1. `classroom_bg.jpg` — full classroom backdrop  *(wired; replace the placeholder)*
 
 - **Size:** 1200 × 2600 px (portrait), opaque PNG. Scaled with `cover`.
 - **Composition:** a warm classroom — green wall, a green **chalkboard at the
@@ -28,7 +28,7 @@ time.
 
 ---
 
-## 2. `desk_surface.png` — the play desk  *(optional; set `DESK_SURFACE` in index.js)*
+## 2. `desk_surface.jpg` — the play desk  *(optional; set `DESK_SURFACE` in index.js)*
 
 - **Size:** 900 × 1600 px, opaque PNG.
 - Top-down **worn wooden school desk** surface that fills the play area: warm oak
@@ -69,7 +69,7 @@ One PNG per skin. File names must match the skin id:
 ### After adding files
 In `index.js`:
 ```js
-export const DESK_SURFACE = require('./desk_surface.png');
+export const DESK_SURFACE = require('./desk_surface.jpg');
 export const PEN_IMAGES = {
   classic:  require('./pen_classic.png'),
   ruby:     require('./pen_ruby.png'),
